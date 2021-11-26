@@ -13,6 +13,8 @@
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     background-color: #000;
+
+    font-size: 14px;
 }
 
 #mainTips {
@@ -184,22 +186,15 @@
 }
 
 #logoLabel {
-    margin-top: 8%;
-    font: bold 3em STXingkai;
-    margin-left: auto;
-    margin-right: auto;
+    display: none;
 }
 
 #versionLabel {
-    margin-top: -3%;
-    font-size: 1.2em;
-    font-weight: bold;
+    display: none;
 }
 
 #floorNameLabel {
-    margin-top: 30px;
-    font-size: 1.6em;
-    font-weight: bold;
+    display: none;
 }
 
 #statusBar {

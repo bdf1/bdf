@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link type='text/css' href='ui.css' rel='stylesheet'>
+</head>
+<body>
+    <div class="game">
+        <div id="topbar"></div>
+        <div class="gameview"></div>
+        <div id="sidebar"></div>
+    </div>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            overflow: hidden;
+        }
+        html {
+            font-size: 1px;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .game {
+            position: relative;
+            width: calc(26 * 32px);
+            height: calc(15 * 32px);
+        }
+        .gameview {
+            position: absolute;
+            top: calc(1 * 32px);
+            width: calc(20 * 32px);
+            height: calc(14 * 32px);
+
+            background-image: url("gameview.png");
+            background-size: contain;
+        }
+    </style>
+    <script src="libs/thirdparty/polyfill.min.js"></script>
+    <script src="libs/thirdparty/vue.min.js"></script>
+    <script src="ui.js"></script>
+    <script>
+        var core = {
+            material: {
+                images: {
+
+                }
+            }
+        }
+        initUI(
+            document.getElementById("topbar"),
+            document.getElementById("sidebar"),
+        );
+    </script>
+</body>
+</html>

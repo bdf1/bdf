@@ -1166,70 +1166,24 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		core.setStatus('hp', Math.min(core.getRealStatus('hpmax'), core.getStatus('hp')));
 	}
 
-	// 设置楼层名
-	if (core.status.floorId) {
-		core.setStatusBarInnerHTML('floor', core.status.maps[core.status.floorId].name);
-	}
-
-	// 设置勇士名字和图标
-	core.setStatusBarInnerHTML('name', core.getStatus('name'));
-	// 设置等级名称
-	core.setStatusBarInnerHTML('lv', core.getLvName());
-
 	// 设置生命上限、生命值、攻防护盾金币和经验值
 	var statusList = ['hpmax', 'hp', 'mana', 'atk', 'def', 'mdef', 'money', 'exp'];
 	statusList.forEach(function (item) {
 		// 向下取整
 		core.status.hero[item] = Math.floor(core.status.hero[item]);
-		// 大数据格式化
-		core.setStatusBarInnerHTML(item, core.getRealStatus(item));
 	});
 
 	// 设置魔力值; status:manamax 只有在非负时才生效。
 	if (core.status.hero.manamax != null && core.getRealStatus('manamax') >= 0) {
 		core.status.hero.mana = Math.min(core.status.hero.mana, core.getRealStatus('manamax'));
-		core.setStatusBarInnerHTML('mana', core.status.hero.mana + "/" + core.getRealStatus('manamax'));
-	} else {
-		core.setStatusBarInnerHTML("mana", core.status.hero.mana);
 	}
-	// 设置技能栏
-	// 可以用flag:skill表示当前开启的技能类型，flag:skillName显示技能名；详见文档-个性化-技能塔的支持
-	core.setStatusBarInnerHTML('skill', core.getFlag('skillName', '无'));
 
 	// 可以在这里添加自己额外的状态栏信息，比如想攻击显示 +0.5 可以这么写：
 	// if (core.hasFlag('halfAtk')) core.setStatusBarInnerHTML('atk', core.statusBar.atk.innerText + "+0.5");
 
 	// 如果是自定义添加的状态栏，也需要在这里进行设置显示的数值
 
-	// 进阶
-	if (core.flags.statusBarItems.indexOf('enableLevelUp') >= 0) {
-		core.setStatusBarInnerHTML('up', core.formatBigNumber(core.getNextLvUpNeed()) || "");
-	} else core.setStatusBarInnerHTML('up', "");
-
-	// 钥匙
-	var keys = ['yellowKey', 'blueKey', 'redKey', 'greenKey'];
-	keys.forEach(function (key) {
-		core.setStatusBarInnerHTML(key, core.setTwoDigits(core.itemCount(key)));
-	});
-	// 毒衰咒
-	core.setStatusBarInnerHTML('poison', core.hasFlag('poison') ? "毒" : "");
-	core.setStatusBarInnerHTML('weak', core.hasFlag('weak') ? "衰" : "");
-	core.setStatusBarInnerHTML('curse', core.hasFlag('curse') ? "咒" : "");
-	// 破炸飞
-	core.setStatusBarInnerHTML('pickaxe', "破" + core.itemCount('pickaxe'));
-	core.setStatusBarInnerHTML('bomb', "炸" + core.itemCount('bomb'));
-	core.setStatusBarInnerHTML('fly', "飞" + core.itemCount('centerFly'));
-
-	// 难度
-	if (core.statusBar.hard.innerText != core.status.hard) {
-		core.statusBar.hard.innerText = core.status.hard;
-	}
-	var hardColor = core.getFlag('__hardColor__', 'red');
-	if (core.statusBar.hard.getAttribute('_style') != hardColor) {
-		core.statusBar.hard.style.color = hardColor;
-		core.statusBar.hard.setAttribute('_style', hardColor);
-	}
-	// 自定义状态栏绘制
+	// // 自定义状态栏绘制
 	core.drawStatusBar();
 
 	// 更新阻激夹域的伤害值
@@ -1583,59 +1537,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 		.sort( /*function (id1, id2) { return core.material.items[id1].name <= core.material.items[id2].name ? -1 : 1 }*/ );
 },
         "drawStatusBar": function () {
-	// 自绘状态栏，需要全塔属性开启系统开关statusCanvas
-	var ctx = core.dom.statusCanvasCtx;
-	core.clearMap(ctx); // 清空竖屏状态栏
-	if (!core.flags.statusCanvas || !core.status.floorId) return; // 如果未开启系统开关或在标题事件/开场剧情，则直接返回
-	if (!core.domStyle.isVertical) { // 横屏模式下，用公共事件预编译然后画在地图上
-		if (!core.domStyle.showStatusBar) // 如果状态栏已隐藏，则直接清空并返回
-			return core.clearMap('uievent', core.getFlag('__canvas_left__', 0), 0, Math.floor(core.__WIDTH__ / 5) * core.__UNIT__, core.__PX_HEIGHT__);
-		try {
-			eval(core.getFlag('__statusCanvas__', ''));
-		} catch (e) {
-			if (e != 'exit') console.log(e);
-		}
-	} else { // 竖屏模式下，和正方形样板一样用老办法绘制
-		if (!core.domStyle.showStatusBar) return; // 如果状态栏已隐藏，则直接返回
-		// 作为样板，只绘制楼层、生命、攻击、防御、护盾、金币、经验、钥匙这八个内容
-		// 需要其他的请自行进行修改；可以点击最上方的“预览”按钮设置勇士属性、道具装备、变量等并查看效果，仅供参考
-		// 需要在游戏中查看竖屏效果的话，可以使用Chrome或Edge浏览器开控制台“切换设备仿真”（Ctrl+Shift+M），或干脆将窗口拉到瘦高形状
-		// 竖屏模式下的画布大小是 core.__PX_WIDTH__ * (32 * rows + 9) 其中rows为状态栏行数，即全塔属性中statusCanvasRowsOnMobile值，最小为1最大为5
-		core.setFillStyle(ctx, core.status.globalAttribute.statusBarColor || core.initStatus.globalAttribute.statusBarColor);
-		// 绘制一段文字，带斜体判定
-		var _fillBoldTextWithFontCheck = function (text, x, y, style) {
-			// 斜体判定：如果不是纯数字和字母，斜体会非常难看，需要取消
-			if (!/^[-a-zA-Z0-9`~!@#$%^&*()_=+\[{\]}\\|;:'",<.>\/?]*$/.test(text))
-				core.setFont(ctx, 'bold 18px Consolas');
-			else core.setFont(ctx, 'italic bold 18px Verdana');
-			core.fillBoldText(ctx, text, x, y, style);
-		}
-		// 绘制楼层
-		core.drawImage(ctx, core.statusBar.icons.floor, 6, 6, 25, 25);
-		_fillBoldTextWithFontCheck((core.status.thisMap || {}).name || "", 42, 26);
-		// 绘制生命
-		core.drawImage(ctx, core.statusBar.icons.hp, 137, 6, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.getRealStatus('hp')), 173, 26);
-		// 绘制攻击
-		core.drawImage(ctx, core.statusBar.icons.atk, 268, 6, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.getRealStatus('atk')), 304, 26);
-		// 绘制防御
-		core.drawImage(ctx, core.statusBar.icons.def, 6, 38, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.getRealStatus('def')), 42, 58);
-		// 绘制护盾
-		core.drawImage(ctx, core.statusBar.icons.mdef, 137, 38, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.getRealStatus('mdef')), 173, 58);
-		// 绘制金币
-		core.drawImage(ctx, core.statusBar.icons.money, 268, 38, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.status.hero.money), 304, 58);
-		// 绘制经验
-		core.drawImage(ctx, core.statusBar.icons.exp, 6, 70, 25, 25);
-		_fillBoldTextWithFontCheck(core.formatBigNumber(core.status.hero.exp), 42, 90);
-		// 绘制三色钥匙
-		_fillBoldTextWithFontCheck(core.setTwoDigits(core.itemCount('yellowKey')), 142, 90, '#FFCCAA');
-		_fillBoldTextWithFontCheck(core.setTwoDigits(core.itemCount('blueKey')), 177, 90, '#AAAADD');
-		_fillBoldTextWithFontCheck(core.setTwoDigits(core.itemCount('redKey')), 212, 90, '#FF8888');
-	}
+	
 },
         "drawStatistics": function () {
 	// 浏览地图时参与的统计项目

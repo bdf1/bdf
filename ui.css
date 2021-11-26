@@ -1,0 +1,218 @@
+/* 组件 */
+.icon img {
+    width: 100%;
+    height: 100%;
+}
+.icon.blink img {
+    animation: blink infinite 1.2s ease-in-out;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 1;
+	}
+	50% {
+        opacity: 0;
+    }
+	100% {
+		opacity: 1;
+	}
+}
+
+/* 顶栏 */
+.topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32rem;
+    z-index: 256;
+
+    background-color: darkslategray;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+.topbar-left, .topbar-right {
+    display: flex;
+    align-items: center;
+}
+.topbar-left {
+    justify-content: start;
+}
+.topbar-right {
+    justify-content: end;
+}
+.topbar-item {
+    display: flex;
+    align-items: center;
+    height: 20rem;
+}
+.topbar-left .topbar-item, .topbar-right .topbar-item {
+    padding: 0 10rem;
+}
+.topbar-left  .topbar-item:not(:first-child),
+.topbar-right .topbar-item:not(:first-child) {
+    border-left: 2rem #AAAAAA solid;
+}
+.topbar-item .icon {
+    width: 24rem;
+    height: 24rem;
+}
+.topbar-item .value {
+    margin-left: 5rem;
+    min-width: 30rem;
+    text-align: right;
+    color: #EEEEEE;
+    font-family: 'Consolas', monospace;
+    font-size: 16rem;
+}
+.topbar-item .button {
+    margin: 0 6rem;
+    padding: 2rem;
+    cursor: pointer;
+}
+.topbar-item .button:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+.user-color {
+    background-color: red;
+    width: 20rem;
+    height: 20rem;
+}
+.hard-label {
+    font-weight: bold;
+}
+.hard-Easy {
+    color: #66BB6A;
+}
+.hard-Normal {
+    color: #FFD600;
+}
+.hard-Hard {
+    color: #FF1744;
+}
+
+/* 侧栏 */
+.sidebar {
+    position: absolute;
+    top: 32rem;
+    bottom: 0;
+    right: 0;
+    width: 192rem;
+    z-index: 256;
+
+    display: flex;
+    flex-direction: column;
+    background-color: #263238;
+    user-select: none;
+    font-size: 14rem;
+}
+.sidebar-item {
+    margin: 5rem;
+    padding: 5rem;
+}
+
+/* 战争 */
+.war {
+    background-color: #B71C1C;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.war .empty {
+    flex-grow: 1;
+
+    color: #EEEEEE;
+    text-align: center;
+}
+
+/* 科研 */
+.research {
+    background-color: #01579B;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    cursor: pointer;
+}
+.research .unit-icon {
+    width: 30rem;
+    height: 30rem;
+    border: 2rem #AAAAAA solid;
+    border-radius: 4rem;
+    background-color: #FDD835;
+}
+.research .warning {
+    width: 20rem;
+    height: 20rem;
+}
+.research .process {
+    flex-grow: 1;
+    margin-left: 5rem;
+}
+.research .process-label {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    justify-content: space-between;
+}
+.research .process-label .name {
+    color: #EEEEEE;
+}
+.research .process-label .value {
+    font-size: 12rem;
+    color: #EEEEEE;
+    font-family: 'Consolas', monospace;
+}
+.research .process-bar {
+    background-color: #AAAAAA;
+    height: 3rem;
+}
+.research .empty {
+    flex-grow: 1;
+
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+
+    color: #EEEEEE;
+}
+
+.city {
+    background-color: #424242;
+}
+
+.battle {
+    background-color: #3E2723;
+}
+
+.missle {
+    background-color: #E16B03;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.missle.disabled {
+    background-color: #555555;
+}
+
+.missle .empty {
+    flex-grow: 1;
+
+    color: #EEEEEE;
+    text-align: center;
+}
+
+.next-turn {
+    margin-top: auto;
+    background-color: #455A64;
+    color: #EEEEEE;
+    font-weight: bold;
+    text-align: center;
+    padding: 5rem;
+}
