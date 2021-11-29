@@ -1,0 +1,33 @@
+.sidebar-layer.selection {
+    /* 选择角色 */
+    .selection-label {
+        background-color: #424242;
+        color: #EEEEEE;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .base-info {
+        display: flex;
+        align-items: center;
+        color: #EEEEEE;
+        font-family: 'Consolas', monospace;
+        .player-icon {
+            margin-right: 5rem;
+        }
+    }
+
+    /* 开始游戏 */
+    .start-button {
+        margin-top: auto;
+        
+        background-color: #455A64;
+        color: #EEEEEE;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        &.disabled {
+            color: #888888;
+        }
+    }
+}

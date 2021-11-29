@@ -1,0 +1,74 @@
+/* 顶栏 */
+.topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32rem;
+    z-index: 256;
+
+    background-color: darkslategray;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    &.lockControl {
+        z-index: 135;
+    }
+}
+.topbar-left, .topbar-right {
+    display: flex;
+    align-items: center;
+}
+.topbar-left {
+    justify-content: start;
+}
+.topbar-right {
+    justify-content: end;
+}
+.topbar-item {
+    display: flex;
+    align-items: center;
+    height: 20rem;
+    padding: 0 10rem;
+    &:not(:first-child) {
+        border-left: 2rem #AAAAAA solid;
+    }
+    .icon {
+        width: 24rem;
+        height: 24rem;
+    }
+    .value {
+        margin-left: 5rem;
+        min-width: 30rem;
+        text-align: right;
+        color: #EEEEEE;
+        font-family: 'Consolas', monospace;
+        font-size: 16rem;
+    }
+    .button {
+        margin: 0 6rem;
+        padding: 2rem;
+        cursor: pointer;
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+    }
+    .user-color {
+        width: 20rem;
+        height: 20rem;
+    }
+    .hard-label {
+        font-weight: bold;
+        font-size: 14rem;
+    }
+    .hard-Easy {
+        color: #66BB6A;
+    }
+    .hard-Normal {
+        color: #FFD600;
+    }
+    .hard-Hard {
+        color: #FF1744;
+    }
+}

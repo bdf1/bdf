@@ -1,10 +1,6 @@
 var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 = 
 {
     "init": function () {
-	core.control.setAutomaticRoute = function (destX, destY, stepPostfix) {
-		core.trigger(destX, destY);
-		core.status.route.push('trigger:' + destX + ":" + destY);
-	}
 	core.control._replayAction_trigger = function (action) {
 		if (action.indexOf("trigger:") != 0) return false;
 
@@ -21,31 +17,29 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		if (!core.flags.displayEnemyDamage && !core.flags.displayExtraDamage) return;
 
 		core.extractBlocks(floorId);
-		core.status.maps[floorId].blocks.forEach(function (block) {
-			if (!flags.cs) return;
-			var x = block.x,
-				y = block.y;
-
-			// v2优化，只绘制范围内的部分
-			if (onMap && core.bigmap.v2) {
-				if (x < core.bigmap.posX - core.bigmap.extend || x > core.bigmap.posX + core.__WIDTH__ + core.bigmap.extend ||
-					y < core.bigmap.posY - core.bigmap.extend || y > core.bigmap.posY + core.__HEIGHT__ + core.bigmap.extend) {
-					return;
+		if (!flags.cs) return;
+		for (var y = 0; y < flags.tu.length; y++) {
+			for (var x = 0; x < flags.tu.length; x++) {
+				var cityId = flags.tu[y][x];
+				if (cityId === 0) return;
+				var city = flags.cs[cityId];
+				var damageString = city.hp,
+					ratio = city.hp / city.HP;
+				var sx = 32 * x, sy = 32 * (y+1);
+				if (ratio < 1) {
+					core.status.damage.data.push({
+						text: damageString, px: sx + 1, py: sy + 32 - 1, color: ratio >= 3 / 4 ? "#1f1" : ratio >= 2 / 4 ? "#fff" : ratio >= 1 / 4 ? "#ff0" : ratio > 0 ? "#f93" : "#f22"
+					});
 				}
+				// if (city.sc[0]) {
+				// 	core.status.damage.data.push({ text: city.sc[0].ys, px: 32 * x + 1, py: 32 * (y + 1) - 17, color: '#FFFFFF' });
+				// }
+				// if (city.gj == flags.xzgj) {
+				// 	core.status.damage.data.push({ text: city.rk, px: 32 * x + 1, py: 32 * (y + 1) - 25, color: '#FFFFFF' });
+				// 	core.status.damage.data.push({ text: city.v.length + "/" + city.lin.length, px: 32 * x + 1, py: 32 * (y + 1) - 9, color: '#FFFFFF' });
+				// }
 			}
-
-			if (!block.disable && block.event.cls.indexOf('enemy') == 0 && block.event.displayDamage !== false) {
-				if (core.flags.displayEnemyDamage) {
-					var damageString = flags.cs[flags.tu[y][x]].hp,
-						ratio = damageString / flags.cs[flags.tu[y][x]].HP;
-					core.status.damage.data.push({ text: damageString, px: 32 * x + 1, py: 32 * (y + 1) - 1, color: ratio >= 3 / 4 ? "#1f1" : ratio >= 2 / 4 ? "#fff" : ratio >= 1 / 4 ? "#ff0" : ratio > 0 ? "#f93" : "#f22" });
-					core.status.damage.data.push({ text: flags.cs[flags.tu[y][x]].v.length + "/" + flags.cs[flags.tu[y][x]].lin.length, px: 32 * x + 1, py: 32 * (y + 1) - 9, color: '#FFFFFF' });
-					core.status.damage.data.push({ text: flags.cs[flags.tu[y][x]].sc[0] ? flags.cs[flags.tu[y][x]].sc[0].ys : "---", px: 32 * x + 1, py: 32 * (y + 1) - 17, color: '#FFFFFF' });
-					core.status.damage.data.push({ text: flags.cs[flags.tu[y][x]].rk, px: 32 * x + 1, py: 32 * (y + 1) - 25, color: '#FFFFFF' });
-
-				}
-			}
-		});
+		}
 	}
 	this.selectCity = function (city) {
 		if (city.length == 0) {
@@ -54,7 +48,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			return;
 		}
 		core.createCanvas('black', 0, 0, 1000, 800, 85);
-		for (var i = 1; i <= 12; i++)
+		for (var i = 2; i <= 13; i++)
 			for (var j = 0; j < 20; j++)
 				if (flags.tu[i][j] && !city.includes(flags.tu[i][j])) core.fillRect('black', j * 32, i * 32, 32, 32, '#000');
 		flags._city = city;
@@ -101,9 +95,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	//如果检测到怪物，这个子程序给绘制初始化
 	this.startEnemyInfoDisplay = function (enemy_x, enemy_y) {
 		//我们要提前获得特殊属性以判断窗口高度
-		var mon_id = core.getBlockId(enemy_x, enemy_y);
-		var special = core.getSpecialText(mon_id);
-		mon_id = flags.tu[enemy_y][enemy_x];
+		var mon_id = flags.tu[enemy_y-1][enemy_x];
 		var width = 200;
 		//bigEnemy变量的作用是检测48像素高的怪物并进行特定绘制
 		if (core.getBlockCls(enemy_x, enemy_y) == 'enemy48')
@@ -112,11 +104,9 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			var bigEnemy = 0;
 		//extra_line检测过长的怪物属性
 		var extra_line = 3;
-		for (let i = 0; i < special.length - 1; i += 2)
-			if (special[i].length > 4 || (i + 1 < special.length && special[i + 1].length > 4)) extra_line += 1;
 		//高度控制。这里只给了正常情况。如果需要绘制境界等其他属性，把下面一行
 		//加//注释掉，然后删除下面的/*和*/启用注释的内容，填写"......"，每个属性20像素。
-		var height = 168 + Math.ceil(special.length / 2 + extra_line) * 20;
+		var height = 168 + extra_line * 20;
 		//var height = 168 + Math.ceil(special.length / 2 + extra_line) * 20 + 20 * "......";  //你需要绘制的行数
 		//下面是计算窗口绘制起始点，本程序考虑了大地图和怪物在地图边缘的情况。
 		var cell_x = (enemy_x + 0.5) * 32 - core.bigmap.offsetX;
@@ -129,13 +119,12 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		var font = "Arial"; //这里"......"填写你的字体。如果不修改的话，默认Arial字体。
 		var fontSize = 15;
 		//绘制窗口
-		core.plugin.addBasics(width, height, cell_x, cell_y, info, special, fontSize, mon_id, font, bigEnemy);
-		var i = core.plugin.addSpecial(width, cell_x, cell_y + bigEnemy, special, mon_id, fontSize, font);
-		core.plugin.addEnemyInfo(info, i, cell_x, cell_y + bigEnemy, mon_id, fontSize, width, font);
+		core.plugin.addBasics(width, height, cell_x, cell_y, info, fontSize, mon_id, font, bigEnemy);
+		core.plugin.addEnemyInfo(info, -2, cell_x, cell_y + bigEnemy, mon_id, fontSize, width, font);
 	}
 
 	//这个子程序用来绘制怪物的基本信息
-	this.addBasics = function (width, height, cell_x, cell_y, info, special, fontSize, mon_id, font, bigEnemy) {
+	this.addBasics = function (width, height, cell_x, cell_y, info, fontSize, mon_id, font, bigEnemy) {
 		//绘制窗口外观
 		core.fillRoundRect("enemyInfo", cell_x, cell_y, width, height + bigEnemy, 5, [0, 0, 0, 0.7]);
 		core.strokeRoundRect("enemyInfo", cell_x, cell_y, width, height + bigEnemy, 5, [255, 255, 255, 1], 2);
@@ -170,53 +159,6 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		b = b_new.toString(16);
 		color = "#" + r + g + b;
 		return color;
-	}
-
-	//这个子程序用来绘制怪物的特殊属性
-	this.addSpecial = function (width, cell_x, cell_y, special, mon_id, fontSize, font) {
-		var i = 0,
-			jump = 0;
-		//特殊属性2个一行，可以绘制很多属性。i控制特殊属性个数以判断绘制行数,jump控制过长属性
-		while (i - jump < special.length) {
-			//这里的代码计算极其复杂，因为特殊属性的绘制位置需要考虑到方方面面。
-			if (special[i - jump].length <= 4 && i + 1 - jump < special.length && special[i + 1 - jump].length <= 4) {
-				core.fillText("enemyInfo", special[i - jump], cell_x + width / 4 - special[i - jump].length * fontSize /
-					4 - special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4, cell_y + 98 +
-					10 * i, core.arrayToRGBA(core.getSpecialColor(mon_id)[i - jump]), fontSize + "px " + font);
-				if (i + 1 - jump < special.length)
-					core.fillText("enemyInfo", special[i + 1 - jump], cell_x + width * 3 / 4 - special[i - jump].length *
-						fontSize / 4 - special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4, cell_y +
-						98 + 10 * i, core.arrayToRGBA(core.getSpecialColor(mon_id)[i + 1 - jump]), fontSize + "px " + font);
-
-				//调整亮度，需要请uncomment并且，如果属性颜色过亮或者过暗可选 "......"里填上调整值
-				/*
-				if (special[i - jump].length <= 4 && i + 1 - jump < special.length && special[i + 1 - jump].length <= 4) {
-				core.fillText("enemyInfo", special[i - jump], cell_x + width / 4 - special[i - jump].length * fontSize /
-					4 - special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4, cell_y + 98 + 10 * i,
-					core.arrayToRGBA(core.plugin.changeColor(core.getSpecialColor(mon_id)[i - jump], "......")), fontSize + "px " + font);
-				if (i + 1 - jump < special.length)
-					core.fillText("enemyInfo", special[i + 1 - jump], cell_x + width * 3 / 4 - special[i - jump].length *
-						fontSize / 4 - special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4, cell_y + 98 + 10 * i, 
-						core.arrayToRGBA(core.plugin.changeColor(core.getSpecialColor(mon_id)[i + 1 - jump], "......")), fontSize + "px " + font);
-				*/
-			} else {
-				core.fillText("enemyInfo", special[i - jump], cell_x + width / 2 - special[i - jump].length * fontSize / 4 -
-					special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4,
-					cell_y + 98 + 10 * i, core.arrayToRGBA(core.getSpecialColor(mon_id)[i - jump]), fontSize + "px " + font);
-
-				//调整亮度，需要请uncomment并且，如果属性颜色过亮或者过暗可选 "......"里填上调整值
-				/*
-				core.fillText("enemyInfo", special[i - jump], cell_x + width / 2 - special[i - jump].length * fontSize / 4 -
-					special[i - jump].replace(/[-_ 0-9a-zA-Z]/g, '').length * fontSize / 4, cell_y + 98 + 10 * i,
-					core.arrayToRGBA(core.plugin.changeColor(core.getSpecialColor(mon_id)[i - jump], "......")), fontSize + "px " + font);
-				*/
-
-				jump += 1;
-			}
-			i += 2;
-		}
-		i -= 2;
-		return i;
 	}
 
 	//这个子程序用来绘制怪物的攻防等信息，由于代码理解简单便不怎么单独注释。
@@ -304,8 +246,8 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 	//主程序，当鼠标移动时进行判断
 	this.enemyInfoDisplay = function (mouse_x, mouse_y) {
 		//使用需要3个条件：打开开关、拥有怪物手册和玩家在电脑端上游戏
-		if (core.getFlag("useEnemyInfoDisplay") == true && core.hasItem("book") && core.platform.isPC == true) {
-			core.createCanvas("enemyInfo", 0, 0, 1000, 700, 90);
+		if (core.getFlag("useEnemyInfoDisplay") == true && core.platform.isPC == true && !core.status.lockControl) {
+			core.createCanvas("enemyInfo", 0, 0, 1000, 700, 1000);
 			//这里处理大地图带来的影响
 			offsetX = core.bigmap.offsetX;
 			offsetY = core.bigmap.offsetY;
@@ -339,7 +281,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		floorId = info.floorId;
 		info.locked = core.status.lockControl;
 
-		core.dom.floorNameLabel.innerText = core.status.maps[floorId].title;
+		// core.dom.floorNameLabel.innerText = core.status.maps[floorId].title;
 		core.lockControl();
 		core.stopAutomaticRoute();
 		core.clearContinueAutomaticRoute();
@@ -369,6 +311,267 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		this.afterBattle(id, x, y);
 		if (callback) callback();
 		core.clearMap("enemyInfo");
+	}
+
+	// 以下处理新UI
+	extendUI.init(core.dom.gameDraw);
+
+	core.drawStatusBar = function() {
+		extendUI.update();
+	}
+
+	extendUI.registerCommand("openSave", function() {
+		core.save(true);
+	});
+
+	extendUI.registerCommand("openLoad", function() {
+		core.load(true);
+	});
+
+	extendUI.registerCommand("openSettings", function() {
+		core.openSettings(true);
+	});
+	
+	core.control.lockControl = function () {
+		core.status.lockControl = true;
+		extendUI.update();
+	}
+
+	core.control.unlockControl = function () {
+		core.status.lockControl = false;
+		extendUI.update();
+	}
+
+	// 进入标题画面时关闭
+	core.control.showStartAnimate = function(noAnimate, callback) {
+		this._showStartAnimate_resetDom();
+		extendUI.execCommand("eject");
+		if (core.flags.startUsingCanvas || noAnimate)
+			return this._showStartAnimate_finished(core.flags.startUsingCanvas, callback);
+		core.hideWithAnimate(core.dom.startTop, 20, function () {
+			core.control._showStartAnimate_finished(false, callback);
+		});
+	}
+
+	core.loader._loadMaterials_afterLoad = function () {
+		var images = core.splitImage(core.material.images['icons']);
+		for (var key in core.statusBar.icons) {
+			if (typeof core.statusBar.icons[key] == 'number') {
+				core.statusBar.icons[key] = images[core.statusBar.icons[key]];
+			}
+		}
+	}
+
+	core.control.clearStatusBar = function() {
+
+	}
+
+	core.control.setToolbarButton = function() {
+
+	}
+
+	core.control.resize = function() {
+		if (main.mode=='editor') return;
+		var clientWidth = main.dom.body.clientWidth, clientHeight = main.dom.body.clientHeight;
+		var CANVAS_WIDTH = core.__PX_WIDTH__, CANVAS_HEIGHT = core.__PX_HEIGHT__;
+		var BORDER = 0;
+	
+		var horizontalMaxRatio = (clientHeight - 2 * BORDER) / (CANVAS_HEIGHT);
+	
+		if (clientWidth - 3 * BORDER >= CANVAS_WIDTH || (clientWidth > clientHeight && horizontalMaxRatio < 1)) {
+			// 横屏
+			core.domStyle.isVertical = false;
+	
+			core.domStyle.availableScale = [];
+			[1, 1.25, 1.5, 1.75, 2].forEach(function (v) {
+				if (clientWidth - 3 * BORDER >= v*(CANVAS_WIDTH) && horizontalMaxRatio >= v) {
+					core.domStyle.availableScale.push(v);
+				}
+			});
+			if (core.domStyle.availableScale.indexOf(core.domStyle.scale) < 0) {
+				core.domStyle.scale = Math.min(1, horizontalMaxRatio);
+			}
+		}
+		else {
+			// 竖屏
+			core.domStyle.isVertical = true;
+			core.domStyle.scale = Math.min(1, (clientWidth - 2 * BORDER) / CANVAS_WIDTH);
+			core.domStyle.availableScale = [];
+			extendToolbar = false;
+		}
+	
+		var globalAttribute = core.status.globalAttribute || core.initStatus.globalAttribute;
+	
+		var obj = {
+			clientWidth: clientWidth,
+			clientHeight: clientHeight,
+			CANVAS_WIDTH: CANVAS_WIDTH,
+			CANVAS_HEIGHT: CANVAS_HEIGHT,
+			BORDER: BORDER,
+			outerWidth: CANVAS_WIDTH * core.domStyle.scale + 2 * BORDER,
+			outerHeight: CANVAS_HEIGHT * core.domStyle.scale + 2 * BORDER,
+			globalAttribute: globalAttribute,
+		};
+	
+		this._doResize(obj);
+	}
+
+	core.control.unregisterResize("gameGroup");
+	core.control.unregisterResize("statusBar");
+	core.control.unregisterResize("status");
+	core.control.unregisterResize("toolBar");
+	core.control.unregisterResize("tools");
+
+	core.control.registerResize("gameGroup", function (obj) {
+		var startBackground = core.domStyle.isVertical ? (main.styles.startVerticalBackground || main.styles.startBackground) : main.styles.startBackground;
+		if (main.dom.startBackground.getAttribute('__src__') != startBackground) {
+			main.dom.startBackground.setAttribute('__src__', startBackground);
+			main.dom.startBackground.src = startBackground;
+		}
+	
+		var gameGroup = core.dom.gameGroup;
+		var totalWidth, totalHeight;
+		if (core.domStyle.isVertical) {
+			totalWidth = obj.outerWidth;
+			totalHeight = obj.outerHeight;
+		}
+		else {
+			totalWidth = obj.outerWidth;
+			totalHeight = obj.outerHeight;
+		}
+		gameGroup.style.width = totalWidth + "px";
+		gameGroup.style.height = totalHeight + "px";
+		gameGroup.style.left = (obj.clientWidth - totalWidth) / 2 + "px";
+		gameGroup.style.top = (obj.clientHeight - totalHeight) / 2 + "px";
+		// floorMsgGroup
+		var floorMsgGroup = core.dom.floorMsgGroup;
+		floorMsgGroup.style = obj.globalAttribute.floorChangingStyle;
+		floorMsgGroup.style.width = obj.outerWidth - 2 * obj.BORDER + "px";
+		floorMsgGroup.style.height = totalHeight - 2 * obj.BORDER + "px";
+		floorMsgGroup.style.fontSize = 16 * core.domStyle.scale + "px";
+		// startPanel
+		core.dom.startPanel.style.fontSize = 16 * core.domStyle.scale + "px";
+		// musicBtn
+		if (core.domStyle.isVertical || core.domStyle.scale < 1) {
+			core.dom.musicBtn.style.right = core.dom.musicBtn.style.bottom = "3px";
+			core.dom.enlargeBtn.style.right = "34px";
+			core.dom.enlargeBtn.style.bottom = "3px"
+		}
+		else {
+			core.dom.musicBtn.style.right = (obj.clientWidth - totalWidth) / 2 + "px";
+			core.dom.musicBtn.style.bottom = (obj.clientHeight - totalHeight) / 2 - 27 + "px";
+			core.dom.enlargeBtn.style.right = (obj.clientWidth - totalWidth) / 2 + 31 + "px";
+			core.dom.enlargeBtn.style.bottom = (obj.clientHeight - totalHeight) / 2 - 27 + "px";
+		}
+	});
+
+	core.control.registerResize("newUI", function (obj) {
+		document.documentElement.style.fontSize = core.domStyle.scale + 'px';
+	});
+
+	core.control.updateHeroIcon = function (name) {
+
+	}
+
+	core.control._updateStatusBar_setToolboxIcon = function() {
+
+	}
+
+	core.control.hideStatusBar = function (showToolbox) {
+		if (main.mode == 'editor') return;
+	
+		// 如果原本就是隐藏的，则先显示
+		if (!core.domStyle.showStatusBar)
+			this.showStatusBar();
+		if (core.isReplaying()) showToolbox = true;
+
+		core.domStyle.showStatusBar = false;
+		core.setFlag('hideStatusBar', true);
+		core.setFlag('showToolbox', showToolbox || null);
+
+		extendUI.update();
+	}
+
+	core.control.showStatusBar = function () {
+		if (main.mode == 'editor') return;
+		if (core.domStyle.showStatusBar) return;
+		core.domStyle.showStatusBar = true;
+		core.removeFlag('hideStatusBar');
+
+		extendUI.update();
+	}
+
+	////// 获得点击事件相对左上角的坐标 //////
+	core.actions._getClickLoc = function (x, y) {
+
+		var size = 32;
+		size = size * core.domStyle.scale;
+
+		if (core.domStyle.isVertical) {
+		}
+		else {
+		}
+
+		var left = core.dom.gameGroup.offsetLeft;
+		var top = core.dom.gameGroup.offsetTop;
+		var loc = {'x': Math.max(x - left), 'y': Math.max(y - top, 0), 'size': size};
+		return loc;
+	}
+
+	// tip 要下移 32
+	core.ui._drawTip_drawOne = function (tip) {
+		core.setAlpha('data', tip.opacity);
+		core.fillRect('data', 5, 5 + 32, tip.width, 42, '#000000');
+		if (tip.image)
+			core.drawImage('data', tip.image, (tip.posX + tip.frame) * 32, tip.posY * tip.height, 32, 32, 10, 10 + 32, 32, 32);
+		core.fillText('data', tip.text, tip.textX, 33 + 32, '#FFFFFF');
+		core.setAlpha('data', 1);
+	}
+
+    core.unregisterAnimationFrame("tip");
+	core.registerAnimationFrame("tip", true, function (timestamp) {
+		if (core.animateFrame.tip == null) return;
+		var tip = core.animateFrame.tip;
+		if (timestamp - tip.time <= 30) return;
+		var delta = timestamp - tip.time;
+		tip.time = timestamp;
+	
+		core.setFont('data', "16px Consolas");
+		core.setTextAlign('data', 'left');
+		core.clearMap('data', 0, 32, core.__PX_WIDTH__, 50 + 32);
+		core.ui._drawTip_drawOne(tip);
+		if (tip.stage == 1) {
+			tip.opacity += 0.05;
+			if (tip.opacity >= 0.6) {
+				tip.stage = 2;
+				tip.displayTime = 0;
+			}
+		} else if (tip.stage == 2) {
+			tip.displayTime += delta;
+			if (tip.displayTime >= 1000) tip.stage = 3;
+		} else tip.opacity -= 0.05;
+	
+		if (tip.opacity <= 0) {
+			core.animateFrame.tip = null;
+		}
+	});
+
+	// 修改楼层绘制
+	if (main.mode == "play") {
+		core.maps._drawMap_drawAll = function (floorId, config) {
+			floorId = floorId || core.status.floorId;
+			this.drawBg(floorId, config);
+
+			core.clearMap('fg');
+			for (var x = 0; x < 20; x++) {
+				for (var y = 0; y < 14; y++) {
+					var id = flags.tu[y][x];
+					if (id === 0) continue;
+					var color = flags.color[flags.cs[id].gj];
+					core.fillRect('fg', x * 32, (y+1) * 32, 32, 32, color);
+				}
+			}
+		}
 	}
 },
     "drawLight": function () {
@@ -625,1096 +828,6 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		}
 		return false;
 	}, 60);
-},
-    "removeMap": function () {
-	// 高层塔砍层插件，删除后不会存入存档，不可浏览地图也不可飞到。
-	// 推荐用法：
-	// 对于超高层或分区域塔，当在1区时将2区以后的地图删除；1区结束时恢复2区，进二区时删除1区地图，以此类推
-	// 这样可以大幅减少存档空间，以及加快存读档速度
-
-	// 删除楼层
-	// core.removeMaps("MT1", "MT300") 删除MT1~MT300之间的全部层
-	// core.removeMaps("MT10") 只删除MT10层
-	this.removeMaps = function (fromId, toId) {
-		toId = toId || fromId;
-		var fromIndex = core.floorIds.indexOf(fromId),
-			toIndex = core.floorIds.indexOf(toId);
-		if (toIndex < 0) toIndex = core.floorIds.length - 1;
-		flags.__visited__ = flags.__visited__ || {};
-		flags.__removed__ = flags.__removed__ || [];
-		flags.__disabled__ = flags.__disabled__ || {};
-		flags.__leaveLoc__ = flags.__leaveLoc__ || {};
-		for (var i = fromIndex; i <= toIndex; ++i) {
-			var floorId = core.floorIds[i];
-			if (core.status.maps[floorId].deleted) continue;
-			delete flags.__visited__[floorId];
-			flags.__removed__.push(floorId);
-			delete flags.__disabled__[floorId];
-			delete flags.__leaveLoc__[floorId];
-			(core.status.autoEvents || []).forEach(function (event) {
-				if (event.floorId == floorId && event.currentFloor) {
-					core.autoEventExecuting(event.symbol, false);
-					core.autoEventExecuted(event.symbol, false);
-				} 
-			});
-			core.status.maps[floorId].deleted = true;
-			core.status.maps[floorId].canFlyTo = false;
-			core.status.maps[floorId].canFlyFrom = false;
-			core.status.maps[floorId].cannotViewMap = true;
-		}
-	}
-
-	// 恢复楼层
-	// core.resumeMaps("MT1", "MT300") 恢复MT1~MT300之间的全部层
-	// core.resumeMaps("MT10") 只恢复MT10层
-	this.resumeMaps = function (fromId, toId) {
-		toId = toId || fromId;
-		var fromIndex = core.floorIds.indexOf(fromId),
-			toIndex = core.floorIds.indexOf(toId);
-		if (toIndex < 0) toIndex = core.floorIds.length - 1;
-		flags.__removed__ = flags.__removed__ || [];
-		for (var i = fromIndex; i <= toIndex; ++i) {
-			var floorId = core.floorIds[i];
-			if (!core.status.maps[floorId].deleted) continue;
-			flags.__removed__ = flags.__removed__.filter(function (f) { return f != floorId; });
-			core.status.maps[floorId] = core.loadFloor(floorId);
-		}
-	}
-
-	// 分区砍层相关
-	var inAnyPartition = function (floorId) {
-		var inPartition = false;
-		(core.floorPartitions || []).forEach(function (floor) {
-			var fromIndex = core.floorIds.indexOf(floor[0]);
-			var toIndex = core.floorIds.indexOf(floor[1]);
-			var index = core.floorIds.indexOf(floorId);
-			if (fromIndex < 0 || index < 0) return;
-			if (toIndex < 0) toIndex = core.floorIds.length - 1;
-			if (index >= fromIndex && index <= toIndex) inPartition = true;
-		});
-		return inPartition;
-	}
-
-	// 分区砍层
-	this.autoRemoveMaps = function (floorId) {
-		if (main.mode != 'play' || !inAnyPartition(floorId)) return;
-		// 根据分区信息自动砍层与恢复
-		(core.floorPartitions || []).forEach(function (floor) {
-			var fromIndex = core.floorIds.indexOf(floor[0]);
-			var toIndex = core.floorIds.indexOf(floor[1]);
-			var index = core.floorIds.indexOf(floorId);
-			if (fromIndex < 0 || index < 0) return;
-			if (toIndex < 0) toIndex = core.floorIds.length - 1;
-			if (index >= fromIndex && index <= toIndex) {
-				core.resumeMaps(core.floorIds[fromIndex], core.floorIds[toIndex]);
-			} else {
-				core.removeMaps(core.floorIds[fromIndex], core.floorIds[toIndex]);
-			}
-		});
-	}
-},
-    "fiveLayers": function () {
-	// 是否启用五图层（增加背景2层和前景2层） 将__enable置为true即会启用；启用后请保存后刷新编辑器
-	// 背景层2将会覆盖背景层 被事件层覆盖 前景层2将会覆盖前景层
-	// 另外 请注意加入两个新图层 会让大地图的性能降低一些
-	// 插件作者：ad
-	var __enable = false;
-	if (!__enable) return;
-
-	// 创建新图层
-	function createCanvas(name, zIndex) {
-		if (!name) return;
-		var canvas = document.createElement('canvas');
-		canvas.id = name;
-		canvas.className = 'gameCanvas';
-		// 编辑器模式下设置zIndex会导致加入的图层覆盖优先级过高
-		if (main.mode != "editor") canvas.style.zIndex = zIndex || 0;
-		// 将图层插入进游戏内容
-		document.getElementById('gameDraw').appendChild(canvas);
-		var ctx = canvas.getContext('2d');
-		core.canvas[name] = ctx;
-		canvas.width = core.__PX_WIDTH__;
-		canvas.height = core.__PX_HEIGHT__;
-		return canvas;
-	}
-
-	var bg2Canvas = createCanvas('bg2', 20);
-	var fg2Canvas = createCanvas('fg2', 63);
-	// 大地图适配
-	core.bigmap.canvas = ["bg2", "fg2", "bg", "event", "event2", "fg", "damage"];
-	core.initStatus.bg2maps = {};
-	core.initStatus.fg2maps = {};
-
-	if (main.mode == 'editor') {
-		/*插入编辑器的图层 不做此步新增图层无法在编辑器显示*/
-		// 编辑器图层覆盖优先级 eui > efg > fg(前景层) > event2(48*32图块的事件层) > event(事件层) > bg(背景层)
-		// 背景层2(bg2) 插入事件层(event)之前(即bg与event之间)
-		document.getElementById('mapEdit').insertBefore(bg2Canvas, document.getElementById('event'));
-		// 前景层2(fg2) 插入编辑器前景(efg)之前(即fg之后)
-		document.getElementById('mapEdit').insertBefore(fg2Canvas, document.getElementById('ebm'));
-		// 原本有三个图层 从4开始添加
-		var num = 4;
-		// 新增图层存入editor.dom中
-		editor.dom.bg2c = core.canvas.bg2.canvas;
-		editor.dom.bg2Ctx = core.canvas.bg2;
-		editor.dom.fg2c = core.canvas.fg2.canvas;
-		editor.dom.fg2Ctx = core.canvas.fg2;
-		editor.dom.maps.push('bg2map', 'fg2map');
-		editor.dom.canvas.push('bg2', 'fg2');
-
-		// 创建编辑器上的按钮
-		var createCanvasBtn = function (name) {
-			// 电脑端创建按钮
-			var input = document.createElement('input');
-			// layerMod4/layerMod5
-			var id = 'layerMod' + num++;
-			// bg2map/fg2map
-			var value = name + 'map';
-			input.type = 'radio';
-			input.name = 'layerMod';
-			input.id = id;
-			input.value = value;
-			editor.dom[id] = input;
-			input.onchange = function () {
-				editor.uifunctions.setLayerMod(value);
-			}
-			return input;
-		};
-
-		var createCanvasBtn_mobile = function (name) {
-			// 手机端往选择列表中添加子选项
-			var input = document.createElement('option');
-			var id = 'layerMod' + num++;
-			var value = name + 'map';
-			input.name = 'layerMod';
-			input.value = value;
-			editor.dom[id] = input;
-			return input;
-		};
-		if (!editor.isMobile) {
-			var input = createCanvasBtn('bg2');
-			var input2 = createCanvasBtn('fg2');
-			// 获取事件层及其父节点
-			var child = document.getElementById('layerMod'),
-				parent = child.parentNode;
-			// 背景层2插入事件层前
-			parent.insertBefore(input, child);
-			// 不能直接更改背景层2的innerText 所以创建文本节点
-			var txt = document.createTextNode('背景2');
-			// 插入事件层前(即新插入的背景层2前)
-			parent.insertBefore(txt, child);
-			// 向最后插入前景层2(即插入前景层后)
-			parent.appendChild(input2);
-			var txt2 = document.createTextNode('前景2');
-			parent.appendChild(txt2);
-			// parent.childNodes[2].replaceWith("bg");
-			// parent.childNodes[6].replaceWith("事件");
-			// parent.childNodes[8].replaceWith("fg");
-		} else {
-			var input = createCanvasBtn_mobile('bg2');
-			var input2 = createCanvasBtn_mobile('fg2');
-			// 手机端因为是选项 所以可以直接改innerText
-			input.innerText = '背景层2';
-			input2.innerText = '前景层2';
-			var parent = document.getElementById('layerMod');
-			parent.insertBefore(input, parent.children[1]);
-			parent.appendChild(input2);
-		}
-	}
-
-	var _loadFloor_doNotCopy = core.maps._loadFloor_doNotCopy;
-	core.maps._loadFloor_doNotCopy = function () {
-		return ["bg2map", "fg2map"].concat(_loadFloor_doNotCopy());
-	}
-	////// 绘制背景和前景层 //////
-	core.maps._drawBg_draw = function (floorId, toDrawCtx, cacheCtx, config) {
-		config.ctx = cacheCtx;
-		core.maps._drawBg_drawBackground(floorId, config);
-		// ------ 调整这两行的顺序来控制是先绘制贴图还是先绘制背景图块；后绘制的覆盖先绘制的。
-		core.maps._drawFloorImages(floorId, config.ctx, 'bg', null, null, config.onMap);
-		core.maps._drawBgFgMap(floorId, 'bg', config);
-		if (config.onMap) {
-			core.drawImage(toDrawCtx, cacheCtx.canvas, core.bigmap.v2 ? -32 : 0, core.bigmap.v2 ? -32 : 0);
-			core.clearMap('bg2');
-			core.clearMap(cacheCtx);
-		}
-		core.maps._drawBgFgMap(floorId, 'bg2', config);
-		if (config.onMap) core.drawImage('bg2', cacheCtx.canvas, core.bigmap.v2 ? -32 : 0, core.bigmap.v2 ? -32 : 0);
-		config.ctx = toDrawCtx;
-	}
-	core.maps._drawFg_draw = function (floorId, toDrawCtx, cacheCtx, config) {
-		config.ctx = cacheCtx;
-		// ------ 调整这两行的顺序来控制是先绘制贴图还是先绘制前景图块；后绘制的覆盖先绘制的。
-		core.maps._drawFloorImages(floorId, config.ctx, 'fg', null, null, config.onMap);
-		core.maps._drawBgFgMap(floorId, 'fg', config);
-		if (config.onMap) {
-			core.drawImage(toDrawCtx, cacheCtx.canvas, core.bigmap.v2 ? -32 : 0, core.bigmap.v2 ? -32 : 0);
-			core.clearMap('fg2');
-			core.clearMap(cacheCtx);
-		}
-		core.maps._drawBgFgMap(floorId, 'fg2', config);
-		if (config.onMap) core.drawImage('fg2', cacheCtx.canvas, core.bigmap.v2 ? -32 : 0, core.bigmap.v2 ? -32 : 0);
-		config.ctx = toDrawCtx;
-	}
-	////// 移动判定 //////
-	core.maps._generateMovableArray_arrays = function (floorId) {
-		return {
-			bgArray: this.getBgMapArray(floorId),
-			fgArray: this.getFgMapArray(floorId),
-			eventArray: this.getMapArray(floorId),
-			bg2Array: this._getBgFgMapArray('bg2', floorId),
-			fg2Array: this._getBgFgMapArray('fg2', floorId)
-		};
-	}
-},
-    "itemShop": function () {
-	// 道具商店相关的插件
-	// 可在全塔属性-全局商店中使用「道具商店」事件块进行编辑（如果找不到可以在入口方块中找）
-
-	var shopId = null; // 当前商店ID
-	var type = 0; // 当前正在选中的类型，0买入1卖出
-	var selectItem = 0; // 当前正在选中的道具
-	var selectCount = 0; // 当前已经选中的数量
-	var page = 0;
-	var totalPage = 0;
-	var totalMoney = 0;
-	var list = [];
-	var shopInfo = null; // 商店信息
-	var choices = []; // 商店选项
-	var use = 'money';
-	var useText = '金币';
-
-	var bigFont = core.ui._buildFont(20, false),
-		middleFont = core.ui._buildFont(18, false);
-
-	this._drawItemShop = function () {
-		// 绘制道具商店
-
-		// Step 1: 背景和固定的几个文字
-		core.ui._createUIEvent();
-		core.clearMap('uievent');
-		core.ui.clearUIEventSelector();
-		core.setTextAlign('uievent', 'left');
-		core.setTextBaseline('uievent', 'top');
-		core.fillRect('uievent', 0, 0, 416, 416, 'black');
-		core.drawWindowSkin('winskin.png', 'uievent', 0, 0, 416, 56);
-		core.drawWindowSkin('winskin.png', 'uievent', 0, 56, 312, 56);
-		core.drawWindowSkin('winskin.png', 'uievent', 0, 112, 312, 304);
-		core.drawWindowSkin('winskin.png', 'uievent', 312, 56, 104, 56);
-		core.drawWindowSkin('winskin.png', 'uievent', 312, 112, 104, 304);
-		core.setFillStyle('uievent', 'white');
-		core.setStrokeStyle('uievent', 'white');
-		core.fillText("uievent", "购买", 32, 74, 'white', bigFont);
-		core.fillText("uievent", "卖出", 132, 74);
-		core.fillText("uievent", "离开", 232, 74);
-		core.fillText("uievent", "当前" + useText, 324, 66, null, middleFont);
-		core.setTextAlign("uievent", "right");
-		core.fillText("uievent", core.formatBigNumber(core.status.hero[use]), 405, 89);
-		core.setTextAlign("uievent", "left");
-		core.ui.drawUIEventSelector(1, "winskin.png", 22 + 100 * type, 66, 60, 33);
-		if (selectItem != null) {
-			core.setTextAlign('uievent', 'center');
-			core.fillText("uievent", type == 0 ? "买入个数" : "卖出个数", 364, 320, null, bigFont);
-			core.fillText("uievent", "<   " + selectCount + "   >", 364, 350);
-			core.fillText("uievent", "确定", 364, 380);
-		}
-
-		// Step 2：获得列表并展示
-		list = choices.filter(function (one) {
-			if (one.condition != null && one.condition != '') {
-				try { if (!core.calValue(one.condition)) return false; } catch (e) {}
-			}
-			return (type == 0 && one.money != null) || (type == 1 && one.sell != null);
-		});
-		var per_page = 6;
-		totalPage = Math.ceil(list.length / per_page);
-		page = Math.floor((selectItem || 0) / per_page) + 1;
-
-		// 绘制分页
-		if (totalPage > 1) {
-			var half = 156;
-			core.setTextAlign('uievent', 'center');
-			core.fillText('uievent', page + " / " + totalPage, half, 388, null, middleFont);
-			if (page > 1) core.fillText('uievent', '上一页', half - 80, 388);
-			if (page < totalPage) core.fillText('uievent', '下一页', half + 80, 388);
-		}
-		core.setTextAlign('uievent', 'left');
-
-		// 绘制每一项
-		var start = (page - 1) * per_page;
-		for (var i = 0; i < per_page; ++i) {
-			var curr = start + i;
-			if (curr >= list.length) break;
-			var item = list[curr];
-			core.drawIcon('uievent', item.id, 10, 125 + i * 40);
-			core.setTextAlign('uievent', 'left');
-			core.fillText('uievent', core.material.items[item.id].name, 50, 132 + i * 40, null, bigFont);
-			core.setTextAlign('uievent', 'right');
-			core.fillText('uievent', (type == 0 ? core.calValue(item.money) : core.calValue(item.sell)) + useText + "/个", 300, 133 + i * 40, null, middleFont);
-			core.setTextAlign("uievent", "left");
-			if (curr == selectItem) {
-				// 绘制描述，文字自动放缩
-				var text = core.material.items[item.id].text || "该道具暂无描述";
-				try { text = core.replaceText(text); } catch (e) {}
-				for (var fontSize = 20; fontSize >= 8; fontSize -= 2) {
-					var config = { left: 10, fontSize: fontSize, maxWidth: 403 };
-					var height = core.getTextContentHeight(text, config);
-					if (height <= 50) {
-						config.top = (56 - height) / 2;
-						core.drawTextContent("uievent", text, config);
-						break;
-					}
-				}
-				core.ui.drawUIEventSelector(2, "winskin.png", 8, 120 + i * 40, 295, 40);
-				if (type == 0 && item.number != null) {
-					core.fillText("uievent", "存货", 324, 132, null, bigFont);
-					core.setTextAlign("uievent", "right");
-					core.fillText("uievent", item.number, 406, 132, null, null, 40);
-				} else if (type == 1) {
-					core.fillText("uievent", "数量", 324, 132, null, bigFont);
-					core.setTextAlign("uievent", "right");
-					core.fillText("uievent", core.itemCount(item.id), 406, 132, null, null, 40);
-				}
-				core.setTextAlign("uievent", "left");
-				core.fillText("uievent", "预计" + useText, 324, 250);
-				core.setTextAlign("uievent", "right");
-				totalMoney = selectCount * (type == 0 ? core.calValue(item.money) : core.calValue(item.sell));
-				core.fillText("uievent", core.formatBigNumber(totalMoney), 405, 280);
-
-				core.setTextAlign("uievent", "left");
-				core.fillText("uievent", type == 0 ? "已购次数" : "已卖次数", 324, 170);
-				core.setTextAlign("uievent", "right");
-				core.fillText("uievent", (type == 0 ? item.money_count : item.sell_count) || 0, 405, 200);
-			}
-		}
-
-		core.setTextAlign('uievent', 'left');
-		core.setTextBaseline('uievent', 'alphabetic');
-	}
-
-	var _add = function (item, delta) {
-		if (item == null) return;
-		selectCount = core.clamp(
-			selectCount + delta, 0,
-			Math.min(type == 0 ? Math.floor(core.status.hero[use] / core.calValue(item.money)) : core.itemCount(item.id),
-				type == 0 && item.number != null ? item.number : Number.MAX_SAFE_INTEGER)
-		);
-	}
-
-	var _confirm = function (item) {
-		if (item == null || selectCount == 0) return;
-		if (type == 0) {
-			core.status.hero[use] -= totalMoney;
-			core.getItem(item.id, selectCount);
-			core.stopSound();
-			core.playSound('确定');
-			if (item.number != null) item.number -= selectCount;
-			item.money_count = (item.money_count || 0) + selectCount;
-		} else {
-			core.status.hero[use] += totalMoney;
-			core.removeItem(item.id, selectCount);
-			core.playSound('确定');
-			core.drawTip("成功卖出" + selectCount + "个" + core.material.items[item.id].name, item.id);
-			if (item.number != null) item.number += selectCount;
-			item.sell_count = (item.sell_count || 0) + selectCount;
-		}
-		selectCount = 0;
-	}
-
-	this._performItemShopKeyBoard = function (keycode) {
-		var item = list[selectItem] || null;
-		// 键盘操作
-		switch (keycode) {
-		case 38: // up
-			if (selectItem == null) break;
-			if (selectItem == 0) selectItem = null;
-			else selectItem--;
-			selectCount = 0;
-			break;
-		case 37: // left
-			if (selectItem == null) {
-				if (type > 0) type--;
-				break;
-			}
-			_add(item, -1);
-			break;
-		case 39: // right
-			if (selectItem == null) {
-				if (type < 2) type++;
-				break;
-			}
-			_add(item, 1);
-			break;
-		case 40: // down
-			if (selectItem == null) {
-				if (list.length > 0) selectItem = 0;
-				break;
-			}
-			if (list.length == 0) break;
-			selectItem = Math.min(selectItem + 1, list.length - 1);
-			selectCount = 0;
-			break;
-		case 13:
-		case 32: // Enter/Space
-			if (selectItem == null) {
-				if (type == 2)
-					core.insertAction({ "type": "break" });
-				else if (list.length > 0)
-					selectItem = 0;
-				break;
-			}
-			_confirm(item);
-			break;
-		case 27: // ESC
-			if (selectItem == null) {
-				core.insertAction({ "type": "break" });
-				break;
-			}
-			selectItem = null;
-			break;
-		}
-	}
-
-	this._performItemShopClick = function (px, py) {
-		var item = list[selectItem] || null;
-		// 鼠标操作
-		if (px >= 22 && px <= 82 && py >= 71 && py <= 102) {
-			// 买
-			if (type != 0) {
-				type = 0;
-				selectItem = null;
-				selectCount = 0;
-			}
-			return;
-		}
-		if (px >= 122 && px <= 182 && py >= 71 && py <= 102) {
-			// 卖
-			if (type != 1) {
-				type = 1;
-				selectItem = null;
-				selectCount = 0;
-			}
-			return;
-		}
-		if (px >= 222 && px <= 282 && py >= 71 && py <= 102) // 离开
-			return core.insertAction({ "type": "break" });
-		// < >
-		if (px >= 318 && px <= 341 && py >= 348 && py <= 376)
-			return _add(item, -1);
-		if (px >= 388 && px <= 416 && py >= 348 && py <= 376)
-			return _add(item, 1);
-		// 确定
-		if (px >= 341 && px <= 387 && py >= 380 && py <= 407)
-			return _confirm(item);
-
-		// 上一页/下一页
-		if (px >= 45 && px <= 105 && py >= 388) {
-			if (page > 1) {
-				selectItem -= 6;
-				selectCount = 0;
-			}
-			return;
-		}
-		if (px >= 208 && px <= 268 && py >= 388) {
-			if (page < totalPage) {
-				selectItem = Math.min(selectItem + 6, list.length - 1);
-				selectCount = 0;
-			}
-			return;
-		}
-
-		// 实际区域
-		if (px >= 9 && px <= 300 && py >= 120 && py < 360) {
-			if (list.length == 0) return;
-			var index = parseInt((py - 120) / 40);
-			var newItem = 6 * (page - 1) + index;
-			if (newItem >= list.length) newItem = list.length - 1;
-			if (newItem != selectItem) {
-				selectItem = newItem;
-				selectCount = 0;
-			}
-			return;
-		}
-	}
-
-	this._performItemShopAction = function () {
-		if (flags.type == 0) return this._performItemShopKeyBoard(flags.keycode);
-		else return this._performItemShopClick(flags.px, flags.py);
-	}
-
-	this.openItemShop = function (itemShopId) {
-		shopId = itemShopId;
-		type = 0;
-		page = 0;
-		selectItem = null;
-		selectCount = 0;
-		core.isShopVisited(itemShopId);
-		shopInfo = flags.__shops__[shopId];
-		if (shopInfo.choices == null) shopInfo.choices = core.clone(core.status.shops[shopId].choices);
-		choices = shopInfo.choices;
-		use = core.status.shops[shopId].use;
-		if (use != 'exp') use = 'money';
-		useText = use == 'money' ? '金币' : '经验';
-
-		core.insertAction([{
-				"type": "while",
-				"condition": "true",
-				"data": [
-					{ "type": "function", "function": "function () { core.plugin._drawItemShop(); }" },
-					{ "type": "wait" },
-					{ "type": "function", "function": "function() { core.plugin._performItemShopAction(); }" }
-				]
-			},
-			{
-				"type": "function",
-				"function": "function () { core.deleteCanvas('uievent'); core.ui.clearUIEventSelector(); }"
-			}
-		]);
-	}
-
-},
-    "enemyLevel": function () {
-	// 此插件将提供怪物手册中的怪物境界显示
-	// 使用此插件需要先给每个怪物定义境界，方法如下：
-	// 点击怪物的【配置表格】，找到“【怪物】相关的表格配置”，然后在【名称】仿照增加境界定义：
-	/*
-	 "level": {
-	 	"_leaf": true,
-	 	"_type": "textarea",
-	 	"_string": true,
-	 	"_data": "境界"
-	 },
-	 */
-	// 然后保存刷新，可以看到怪物的属性定义中出现了【境界】。再开启本插件即可。
-
-	// 是否开启本插件，默认禁用；将此改成 true 将启用本插件。
-	var __enable = false;
-	if (!__enable) return;
-
-	// 这里定义每个境界的显示颜色；可以写'red', '#RRGGBB' 或者[r,g,b,a]四元数组
-	var levelToColors = {
-		"萌新一阶": "red",
-		"萌新二阶": "#FF0000",
-		"萌新三阶": [255, 0, 0, 1],
-	};
-
-	// 复写 _drawBook_drawName
-	var originDrawBook = core.ui._drawBook_drawName;
-	core.ui._drawBook_drawName = function (index, enemy, top, left, width) {
-		// 如果没有境界，则直接调用原始代码绘制
-		if (!enemy.level) return originDrawBook.call(core.ui, index, enemy, top, left, width);
-		// 存在境界，则额外进行绘制
-		core.setTextAlign('ui', 'center');
-		if (enemy.specialText.length == 0) {
-			core.fillText('ui', enemy.name, left + width / 2,
-				top + 27, '#DDDDDD', this._buildFont(17, true));
-			core.fillText('ui', enemy.level, left + width / 2,
-				top + 51, core.arrayToRGBA(levelToColors[enemy.level] || '#DDDDDD'), this._buildFont(14, true));
-		} else {
-			core.fillText('ui', enemy.name, left + width / 2,
-				top + 20, '#DDDDDD', this._buildFont(17, true), width);
-			switch (enemy.specialText.length) {
-			case 1:
-				core.fillText('ui', enemy.specialText[0], left + width / 2,
-					top + 38, core.arrayToRGBA((enemy.specialColor || [])[0] || '#FF6A6A'),
-					this._buildFont(14, true), width);
-				break;
-			case 2:
-				// Step 1: 计算字体
-				var text = enemy.specialText[0] + "  " + enemy.specialText[1];
-				core.setFontForMaxWidth('ui', text, width, this._buildFont(14, true));
-				// Step 2: 计算总宽度
-				var totalWidth = core.calWidth('ui', text);
-				var leftWidth = core.calWidth('ui', enemy.specialText[0]);
-				var rightWidth = core.calWidth('ui', enemy.specialText[1]);
-				// Step 3: 绘制
-				core.fillText('ui', enemy.specialText[0], left + (width + leftWidth - totalWidth) / 2,
-					top + 38, core.arrayToRGBA((enemy.specialColor || [])[0] || '#FF6A6A'));
-				core.fillText('ui', enemy.specialText[1], left + (width + totalWidth - rightWidth) / 2,
-					top + 38, core.arrayToRGBA((enemy.specialColor || [])[1] || '#FF6A6A'));
-				break;
-			default:
-				core.fillText('ui', '多属性...', left + width / 2,
-					top + 38, '#FF6A6A', this._buildFont(14, true), width);
-			}
-			core.fillText('ui', enemy.level, left + width / 2,
-				top + 56, core.arrayToRGBA(levelToColors[enemy.level] || '#DDDDDD'), this._buildFont(14, true));
-		}
-	}
-
-	// 也可以复写其他的属性颜色如怪物攻防等，具体参见下面的例子的注释部分
-	core.ui._drawBook_drawRow1 = function (index, enemy, top, left, width, position) {
-		// 绘制第一行
-		core.setTextAlign('ui', 'left');
-		var b13 = this._buildFont(13, true),
-			f13 = this._buildFont(13, false);
-		var col1 = left,
-			col2 = left + width * 9 / 25,
-			col3 = left + width * 17 / 25;
-		core.fillText('ui', '生命', col1, position, '#DDDDDD', f13);
-		core.fillText('ui', core.formatBigNumber(enemy.hp || 0), col1 + 30, position, /*'red' */ null, b13);
-		core.fillText('ui', '攻击', col2, position, null, f13);
-		core.fillText('ui', core.formatBigNumber(enemy.atk || 0), col2 + 30, position, /* '#FF0000' */ null, b13);
-		core.fillText('ui', '防御', col3, position, null, f13);
-		core.fillText('ui', core.formatBigNumber(enemy.def || 0), col3 + 30, position, /* [255, 0, 0, 1] */ null, b13);
-	}
-
-
-},
-    "dynamicHp": function () {
-	// 此插件允许人物血量动态进行变化
-	// 原作：Fux2（老黄鸡）
-
-	// 是否开启本插件，默认禁用；将此改成 true 将启用本插件。
-	var __enable = false;
-	if (!__enable) return;
-
-	var speed = 0.05; // 动态血量变化速度，越大越快。
-
-	var _currentHp = null;
-	var _lastStatus = null;
-	var _check = function () {
-		if (_lastStatus != core.status.hero) {
-			_lastStatus = core.status.hero;
-			_currentHp = core.status.hero.hp;
-		}
-	}
-
-	core.registerAnimationFrame('dynamicHp', true, function () {
-		_check();
-		if (core.status.hero.hp != _currentHp) {
-			var dis = (_currentHp - core.status.hero.hp) * speed;
-			if (Math.abs(dis) < 2) {
-				_currentHp = core.status.hero.hp;
-			} else {
-				_currentHp -= dis;
-			}
-			core.setStatusBarInnerHTML('hp', _currentHp);
-		}
-	});
-},
-    "multiHeros": function () {
-	// 多角色插件
-	// Step 1: 启用本插件
-	// Step 2: 定义每个新的角色各项初始数据（参见下方注释）
-	// Step 3: 在游戏中的任何地方都可以调用 `core.changeHero()` 进行切换；也可以 `core.changeHero(1)` 来切换到某个具体的角色上
-
-	// 是否开启本插件，默认禁用；将此改成 true 将启用本插件。
-	var __enable = false;
-	if (!__enable) return;
-
-	// 在这里定义全部的新角色属性
-	// 请注意，在这里定义的内容不会多角色共用，在切换时会进行恢复。
-	// 你也可以自行新增或删除，比如不共用金币则可以加上"money"的初始化，不共用道具则可以加上"items"的初始化，
-	// 多角色共用hp的话则删除hp，等等。总之，不共用的属性都在这里进行定义就好。
-	var hero1 = {
-		"floorId": "MT0", // 该角色初始楼层ID；如果共用楼层可以注释此项
-		"image": "brave.png", // 角色的行走图名称；此项必填不然会报错
-		"name": "1号角色",
-		"lv": 1,
-		"hp": 10000, // 如果HP共用可注释此项
-		"atk": 1000,
-		"def": 1000,
-		"mdef": 0,
-		// "money": 0, // 如果要不共用金币则取消此项注释
-		// "exp": 0, // 如果要不共用经验则取消此项注释
-		"loc": { "x": 0, "y": 0, "direction": "up" }, // 该角色初始位置；如果共用位置可注释此项
-		"items": {
-			"tools": {}, // 如果共用消耗道具（含钥匙）则可注释此项
-			// "constants": {}, // 如果不共用永久道具（如手册）可取消注释此项
-			"equips": {}, // 如果共用在背包的装备可注释此项
-		},
-		"equipment": [], // 如果共用装备可注释此项；此项和上面的「共用在背包的装备」需要拥有相同状态，不然可能出现问题
-	};
-	// 也可以类似新增其他角色
-	// 新增的角色，各项属性共用与不共用的选择必须和上面完全相同，否则可能出现问题。
-	// var hero2 = { ...
-
-	var heroCount = 2; // 包含默认角色在内总共多少个角色，该值需手动修改。
-
-	this.initHeros = function () {
-		core.setFlag("hero1", core.clone(hero1)); // 将属性值存到变量中
-		// core.setFlag("hero2", core.clone(hero2)); // 更多的角色也存入变量中；每个定义的角色都需要新增一行
-
-		// 检测是否存在装备
-		if (hero1.equipment) {
-			if (!hero1.items || !hero1.items.equips) {
-				alert('多角色插件的equipment和道具中的equips必须拥有相同状态！');
-			}
-			// 存99号套装为全空
-			var saveEquips = core.getFlag("saveEquips", []);
-			saveEquips[99] = [];
-			core.setFlag("saveEquips", saveEquips);
-		} else {
-			if (hero1.items && hero1.items.equips) {
-				alert('多角色插件的equipment和道具中的equips必须拥有相同状态！');
-			}
-		}
-	}
-
-	// 在游戏开始注入initHeros
-	var _startGame_setHard = core.events._startGame_setHard;
-	core.events._startGame_setHard = function () {
-		_startGame_setHard.call(core.events);
-		core.initHeros();
-	}
-
-	// 切换角色
-	// 可以使用 core.changeHero() 来切换到下一个角色
-	// 也可以 core.changeHero(1) 来切换到某个角色（默认角色为0）
-	this.changeHero = function (toHeroId) {
-		var currHeroId = core.getFlag("heroId", 0); // 获得当前角色ID
-		if (toHeroId == null) {
-			toHeroId = (currHeroId + 1) % heroCount;
-		}
-		if (currHeroId == toHeroId) return;
-
-		var saveList = Object.keys(hero1);
-
-		// 保存当前内容
-		var toSave = {};
-		// 暂时干掉 drawTip 和 音效，避免切装时的提示
-		var _drawTip = core.ui.drawTip;
-		core.ui.drawTip = function () {};
-		var _playSound = core.control.playSound;
-		core.control.playSound = function () {}
-		// 记录当前录像，因为可能存在换装问题
-		core.clearRouteFolding();
-		var routeLength = core.status.route.length;
-		// 优先判定装备
-		if (hero1.equipment) {
-			core.items.quickSaveEquip(100 + currHeroId);
-			core.items.quickLoadEquip(99);
-		}
-
-		saveList.forEach(function (name) {
-			if (name == 'floorId') toSave[name] = core.status.floorId; // 楼层单独设置
-			else if (name == 'items') {
-				toSave.items = core.clone(core.status.hero.items);
-				Object.keys(toSave.items).forEach(function (one) {
-					if (!hero1.items[one]) delete toSave.items[one];
-				});
-			} else toSave[name] = core.clone(core.status.hero[name]); // 使用core.clone()来创建新对象
-		});
-
-		core.setFlag("hero" + currHeroId, toSave); // 将当前角色信息进行保存
-		var data = core.getFlag("hero" + toHeroId); // 获得要切换的角色保存内容
-
-		// 设置角色的属性值
-		saveList.forEach(function (name) {
-			if (name == "floorId");
-			else if (name == "items") {
-				Object.keys(core.status.hero.items).forEach(function (one) {
-					if (data.items[one]) core.status.hero.items[one] = core.clone(data.items[one]);
-				});
-			} else {
-				core.status.hero[name] = core.clone(data[name]);
-			}
-		});
-		// 最后装上装备
-		if (hero1.equipment) {
-			core.items.quickLoadEquip(100 + toHeroId);
-		}
-
-		core.ui.drawTip = _drawTip;
-		core.control.playSound = _playSound;
-		core.status.route = core.status.route.slice(0, routeLength);
-		core.control._bindRoutePush();
-
-		// 插入事件：改变角色行走图并进行楼层切换
-		var toFloorId = data.floorId || core.status.floorId;
-		var toLoc = data.loc || core.status.hero.loc;
-		core.insertAction([
-			{ "type": "setHeroIcon", "name": data.image || "hero.png" }, // 改变行走图
-			// 同层则用changePos，不同层则用changeFloor；这是为了避免共用楼层造成触发eachArrive
-			toFloorId != core.status.floorId ? {
-				"type": "changeFloor",
-				"floorId": toFloorId,
-				"loc": [toLoc.x, toLoc.y],
-				"direction": toLoc.direction,
-				"time": 0 // 可以在这里设置切换时间
-			} : { "type": "changePos", "loc": [toLoc.x, toLoc.y], "direction": toLoc.direction }
-			// 你还可以在这里执行其他事件，比如增加或取消跟随效果
-		]);
-		core.setFlag("heroId", toHeroId); // 保存切换到的角色ID
-	}
-},
-    "itemCategory": function () {
-	// 物品分类插件。此插件允许你对消耗道具和永久道具进行分类，比如标记「宝物类」「剧情道具」「药品」等等。
-	// 使用方法：
-	// 1. 启用本插件
-	// 2. 在下方数组中定义全部的物品分类类型
-	// 3. 点击道具的【配置表格】，找到“【道具】相关的表格配置”，然后在【道具描述】之后仿照增加道具的分类：
-	/*
-	 "category": {
-	 	"_leaf": true,
-	 	"_type": "textarea",
-	 	"_string": true,
-	 	"_data": "道具分类"
-	 },
-	 */
-	// （你也可以选择使用下拉框的方式定义每个道具的分类，写法参见上面的cls）
-	// 然后刷新编辑器，就可以对每个物品进行分类了
-
-	// 是否开启本插件，默认禁用；将此改成 true 将启用本插件。
-	var __enable = false;
-	if (!__enable) return;
-
-	// 在这里定义所有的道具分类类型，一行一个
-	var categories = [
-		"宝物类",
-		"辅助类",
-		"技能类",
-		"剧情道具",
-		"增益道具",
-	];
-	// 当前选中的道具类别
-	var currentCategory = null;
-
-	// 重写 core.ui._drawToolbox 以绘制分类类别
-	var _drawToolbox = core.ui._drawToolbox;
-	core.ui._drawToolbox = function (index) {
-		_drawToolbox.call(this, index);
-		core.setTextAlign('ui', 'left');
-		core.fillText('ui', '类别[E]：' + (currentCategory || "全部"), 15, this.PX_WIDTH - 13);
-	}
-
-	// 获得所有应该在道具栏显示的某个类型道具
-	core.ui.getToolboxItems = function (cls) {
-		// 检查类别
-		return Object.keys(core.status.hero.items[cls])
-			.filter(function (id) {
-				return !core.material.items[id].hideInToolbox &&
-					(currentCategory == null || core.material.items[id].category == currentCategory);
-			}).sort();
-	}
-
-	// 注入道具栏的点击事件（点击类别）
-	var _clickToolbox = core.actions._clickToolbox;
-	core.actions._clickToolbox = function (x, y) {
-		if (x >= 0 && x <= this.H_WIDTH - 4 && y == this.Y_LAST) {
-			drawToolboxCategory();
-			return;
-		}
-		return _clickToolbox.call(core.actions, x, y);
-	}
-
-	// 注入道具栏的按键事件（E键）
-	var _keyUpToolbox = core.actions._keyUpToolbox;
-	core.actions._keyUpToolbox = function (keyCode) {
-		if (keyCode == 69) {
-			// 按E键则打开分类类别选择
-			drawToolboxCategory();
-			return;
-		}
-		return _keyUpToolbox.call(core.actions, keyCode);
-	}
-
-	// ------ 以下为选择道具分类的相关代码 ------ //
-
-	// 关闭窗口时清除分类选择项
-	var _closePanel = core.ui.closePanel;
-	core.ui.closePanel = function () {
-		currentCategory = null;
-		_closePanel.call(core.ui);
-	}
-
-	// 弹出菜单以选择具体哪个分类
-	// 直接使用 core.drawChoices 进行绘制
-	var drawToolboxCategory = function () {
-		if (core.status.event.id != 'toolbox') return;
-		var selection = categories.indexOf(currentCategory) + 1;
-		core.ui.closePanel();
-		core.status.event.id = 'toolbox-category';
-		core.status.event.selection = selection;
-		core.lockControl();
-		// 给第一项插入「全部」
-		core.drawChoices('请选择道具类别', ["全部"].concat(categories));
-	}
-
-	// 选择某一项
-	var _selectCategory = function (index) {
-		core.ui.closePanel();
-		if (index <= 0 || index > categories.length) currentCategory = null;
-		else currentCategory = categories[index - 1];
-		core.openToolbox();
-	}
-
-	var _clickToolBoxCategory = function (x, y) {
-		if (!core.status.lockControl || core.status.event.id != 'toolbox-category') return false;
-
-		if (x < core.actions.CHOICES_LEFT || x > core.actions.CHOICES_RIGHT) return false;
-		var choices = core.status.event.ui.choices;
-		var topIndex = core.actions._getChoicesTopIndex(choices.length);
-		if (y >= topIndex && y < topIndex + choices.length) {
-			_selectCategory(y - topIndex);
-		}
-		return true;
-	}
-
-	// 注入点击事件
-	core.registerAction('onclick', 'toolbox-category', _clickToolBoxCategory, 100);
-
-	// 注入光标跟随事件
-	core.registerAction('onmove', 'toolbox-category', function (x, y) {
-		if (!core.status.lockControl || core.status.event.id != 'toolbox-category') return false;
-		core.actions._onMoveChoices(x, y);
-		return true;
-	}, 100);
-
-	// 注入键盘光标事件
-	core.registerAction('keyDown', 'toolbox-category', function (keyCode) {
-		if (!core.status.lockControl || core.status.event.id != 'toolbox-category') return false;
-		core.actions._keyDownChoices(keyCode);
-		return true;
-	}, 100);
-
-	// 注入键盘按键事件
-	core.registerAction('keyUp', 'toolbox-category', function (keyCode) {
-		if (!core.status.lockControl || core.status.event.id != 'toolbox-category') return false;
-		core.actions._selectChoices(core.status.event.ui.choices.length, keyCode, _clickToolBoxCategory);
-		return true;
-	}, 100);
-
-},
-    "heroFourFrames": function () {
-	// 样板的勇士/跟随者移动时只使用2、4两帧，观感较差。本插件可以将四帧全用上。
-
-	// 是否启用本插件
-	var __enable = true;
-	if (!__enable) return;
-
-	["up", "down", "left", "right"].forEach(function (one) {
-		// 指定中间帧动画
-		core.material.icons.hero[one].midFoot = 2;
-	});
-
-	var heroMoving = function (timestamp) {
-		if (core.status.heroMoving <= 0) return;
-		if (timestamp - core.animateFrame.moveTime > core.values.moveSpeed) {
-			core.animateFrame.leftLeg++;
-			core.animateFrame.moveTime = timestamp;
-		}
-		core.drawHero(['stop', 'leftFoot', 'midFoot', 'rightFoot'][core.animateFrame.leftLeg % 4], 4 * core.status.heroMoving);
-	}
-	core.registerAnimationFrame('heroMoving', true, heroMoving);
-
-	core.events._eventMoveHero_moving = function (step, moveSteps) {
-		var curr = moveSteps[0];
-		var direction = curr[0], x = core.getHeroLoc('x'), y = core.getHeroLoc('y');
-		// ------ 前进/后退
-		var o = direction == 'backward' ? -1 : 1;
-		if (direction == 'forward' || direction == 'backward') direction = core.getHeroLoc('direction');
-		var faceDirection = direction;
-		if (direction == 'leftup' || direction == 'leftdown') faceDirection = 'left';
-		if (direction == 'rightup' || direction == 'rightdown') faceDirection = 'right';
-		core.setHeroLoc('direction', direction);
-		if (curr[1] <= 0) {
-			core.setHeroLoc('direction', faceDirection);
-			moveSteps.shift();
-			return true;
-		}
-		if (step <= 4) core.drawHero('stop', 4 * o * step);
-		else if (step <= 8) core.drawHero('leftFoot', 4 * o * step);
-		else if (step <= 12) core.drawHero('midFoot', 4 * o * (step - 8));
-		else if (step <= 16) core.drawHero('rightFoot', 4 * o * (step - 8)); // if (step == 8) {
-		if (step == 8 || step == 16) {
-			core.setHeroLoc('x', x + o * core.utils.scan2[direction].x, true);
-			core.setHeroLoc('y', y + o * core.utils.scan2[direction].y, true);
-			core.updateFollowers();
-			curr[1]--;
-			if (curr[1] <= 0) moveSteps.shift();
-			core.setHeroLoc('direction', faceDirection);
-			return step == 16;
-		}
-		return false;
-	}
-},
-    "startCanvas": function () {
-	// 使用本插件可以将自绘的标题界面居中。仅在【标题开启事件化】后才有效。
-	// 由于一些技术性的原因，标题界面事件化无法应用到覆盖状态栏的整个界面。
-	// 这是一个较为妥协的插件，会在自绘标题界面时隐藏状态栏、工具栏和边框，并将画布进行居中。
-	// 本插件仅在全塔属性的 "startCanvas" 生效；进入 "startText" 时将会离开居中状态，回归正常界面。
-
-	// 是否开启本插件，默认禁用；将此改成 true 将启用本插件。
-	var __enable = false;
-	if (!__enable) return;
-
-	// 检查【标题开启事件化】是否开启
-	if (!core.flags.startUsingCanvas || main.mode != 'play') return;
-
-	var _isTitleCanvasEnabled = false;
-	var _getClickLoc = core.actions._getClickLoc;
-	this._setTitleCanvas = function () {
-		if (_isTitleCanvasEnabled) return;
-		_isTitleCanvasEnabled = true;
-
-		// 禁用窗口resize
-		window.onresize = function () {};
-		core.resize = function () {}
-
-		// 隐藏状态栏
-		core.dom.statusBar.style.display = 'none';
-		core.dom.statusCanvas.style.display = 'none';
-		core.dom.toolBar.style.display = 'none';
-		// 居中画布
-		if (core.domStyle.isVertical) {
-			core.dom.gameDraw.style.top =
-				(parseInt(core.dom.gameGroup.style.height) - parseInt(core.dom.gameDraw.style.height)) / 2 + "px";
-		} else {
-			core.dom.gameDraw.style.right =
-				(parseInt(core.dom.gameGroup.style.width) - parseInt(core.dom.gameDraw.style.width)) / 2 + "px";
-		}
-		core.dom.gameDraw.style.border = '3px transparent solid';
-		core.actions._getClickLoc = function (x, y) {
-			var left = core.dom.gameGroup.offsetLeft + core.dom.gameDraw.offsetLeft + 3;
-			var top = core.dom.gameGroup.offsetTop + core.dom.gameDraw.offsetTop + 3;
-			var loc = { 'x': Math.max(x - left, 0), 'y': Math.max(y - top, 0), 'size': 32 * core.domStyle.scale };
-			return loc;
-		}
-	}
-
-	this._resetTitleCanvas = function () {
-		if (!_isTitleCanvasEnabled) return;
-		_isTitleCanvasEnabled = false;
-		window.onresize = function () { try { main.core.resize(); } catch (e) { main.log(e); } }
-		core.resize = function () { return core.control.resize(); }
-		core.resize();
-		core.actions._getClickLoc = _getClickLoc;
-	}
-
-	// 复写“开始游戏”
-	core.events._startGame_start = function (hard, seed, route, callback) {
-		// console.log('开始游戏');
-		core.resetGame(core.firstData.hero, hard, null, core.cloneArray(core.initStatus.maps));
-		core.setHeroLoc('x', -1);
-		core.setHeroLoc('y', -1);
-
-		if (seed != null && seed > 0) {
-			core.setFlag('__seed__', seed);
-			core.setFlag('__rand__', seed);
-		} else core.utils.__init_seed();
-
-		core.clearStatusBar();
-		core.plugin._setTitleCanvas();
-
-		var todo = [];
-		core.hideStatusBar();
-		core.push(todo, core.firstData.startCanvas);
-		core.push(todo, { "type": "function", "function": "function() { core.plugin._resetTitleCanvas(); core.events._startGame_setHard(); }" })
-		core.push(todo, core.firstData.startText);
-		this.insertAction(todo, null, null, function () {
-			core.events._startGame_afterStart(callback);
-		});
-
-		if (route != null) core.startReplay(route);
-	}
-
-	var _loadData = core.control.loadData;
-	core.control.loadData = function (data, callback) {
-		core.plugin._resetTitleCanvas();
-		_loadData.call(core.control, data, callback);
-	}
 },
     "routeFixing": function () {
 	// 是否开启本插件，true 表示启用，false 表示禁用。
@@ -2018,5 +1131,823 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		}
 		return s;
 	}
+},
+    "initGameData": function () {
+	// 在此增加新插件
+	core.plugin.initGameData = function () {
+
+		core.status.hero.flags.useEnemyInfoDisplay = true;
+		core.status.hero.items.constants = { book: 1, fly: 1 }
+		var gjm = [""]
+		var gjm_ = [
+			"01495", "305836qwe", "alex", "bdf", "BerylliuMM", "box", "castor_v_pollux", "cyf", "CZERNY_Op.740", "DCleanMeow", "Fab777", "freudia", "Kyuuri", "lilie500", "LOL解说：雷霆", "NekoChocolate", "qweasz687", "Skylink", "Solomonhume", "StarInShadow", "Takanashi_Hinata", "x2c2y4", "Yao Fu",
+			"艾之葵", "白露久远", "北海小羊", "冰语の梦雪", "怠惰", "非寒", "风曦流光", "好丽友派新掌门", "见见", "霖", "鹿间裕贵", "魔塔忠实爱好者", "茉莉花茶", "欧耶", "胖伯", "千夜", "前往饿啊是", "乾隆汽车", "若愚", "上财mary随便拆拆", "食猫兽杨子默", "水塔製作員", "太难了", "婉约诗人", "我能听见风的声音", "筱米库", "戌亥とこ", "杨超越天下无敌", "银河爱丽丝", "再顶lz", "终末之扉"
+		]
+		var nickname = [""]
+		var nickname_ = [
+			"01495", "qwe", "alex", "bdf", "B", "box", "c", "cyf", "C", "DC", "Fab", "f", "K", "l", "L", "N", "q", "Sk", "So", "St", "T", "x2", "Y", "艾", "白", "北", "冰", "怠惰", "非寒", "风", "好", "见见", "霖", "鹿", "魔", "茉莉", "欧耶", "胖伯", "千夜", "前", "乾", "若愚", "上财", "食", "水", "太难了", "婉", "听风", "筱", "戌亥", "杨", "银", "再顶", "终末"
+		]
+		for (var i = gjm_.length; i > 0; i--) {
+			var t = core.rand(i);
+			gjm.push(gjm_[t]);
+			gjm_.splice(t, 1);
+			nickname.push(nickname_[t]);
+			nickname_.splice(t, 1);
+		}
+		core.status.hero.flags.nickname = nickname;
+		core.status.hero.flags.gjm = gjm;
+		var cs = [{}],
+			gj = [{}];
+		for (var i in gjm)
+			if (gjm[i]) {
+				cs.push({ nm: gjm[i] + " 1", gj: i, ic: 10, rk: 60, hp: 30000, kj: 10, rkzz: 2, HP: 30000, sc: [], v: [], lin: [] });
+				cs.push({ nm: gjm[i] + " 2", gj: i, ic: 6, rk: 45, hp: 20000, kj: 6, rkzz: 1, HP: 20000, sc: [], v: [], lin: [] });
+				cs.push({ nm: gjm[i] + " 3", gj: i, ic: 4, rk: 30, hp: 10000, kj: 4, rkzz: 1, HP: 10000, sc: [], v: [], lin: [] });
+				cs.push({ nm: gjm[i] + " 4", gj: i, ic: 2, rk: 15, hp: 5000, kj: 2, rkzz: 1, HP: 5000, sc: [], v: [], lin: [] });
+				gj.push({
+					nm: gjm[i],
+					sile: false,
+					dd: [],
+					yffx: 0,
+					yffy: [
+						[],
+						[0, 0, 0, 4000, 1e4, 2e4],
+						[0, 0, 2000, 8000, 2e4, 4.8e4],
+						[0, 0, 1e4, 4e4, 7e4, 11e4],
+						[0, 3000, 1e4, 6e4],
+						[0, 2e4]
+					]
+				});
+			}
+		var mil = [
+			[],
+			[{},
+				{ nm: "步兵师", zdl: 15, hp: 10, sd: 1, xh: 32 },
+				{ nm: "机械化师", zdl: 25, hp: 20, sd: 1, xh: 48 },
+				{ nm: "信息化步兵师", zdl: 50, hp: 40, sd: 2, xh: 64 },
+				{ nm: "特种部队", zdl: 90, hp: 80, sd: 3, xh: 108 },
+				{ nm: "高科技部队", zdl: 150, hp: 120, sd: 3, xh: 180 }
+			],
+			[{},
+				{ nm: "83式152毫米加农炮", zdl: 60, hp: 5, sd: 3, xh: 60 },
+				{ nm: "89式自行火炮", zdl: 100, hp: 10, sd: 3, xh: 100 },
+				{ nm: "PLZ-45自行火炮", zdl: 220, hp: 20, sd: 3, xh: 150 },
+				{ nm: "WS-3d自行火箭炮", zdl: 320, hp: 20, sd: 3, xh: 200 },
+				{ nm: "C-1激光炮", zdl: 400, hp: 30, sd: 3, xh: 240 }
+			],
+			[{},
+				{ nm: "80式坦克", zdl: 40, hp: 120, sd: 6, xh: 120 },
+				{ nm: "96式坦克", zdl: 80, hp: 220, sd: 6, xh: 180 },
+				{ nm: "99式坦克", zdl: 135, hp: 450, sd: 6, xh: 240 },
+				{ nm: "11式坦克", zdl: 200, hp: 810, sd: 6, xh: 320 },
+				{ nm: "24式坦克", zdl: 250, hp: 1260, sd: 6, xh: 420 }
+			],
+			[{},
+				{ nm: "东风-13导弹", zdl: 400, hp: 1, sd: 5, xh: 80 },
+				{ nm: "东风-22导弹", zdl: 900, hp: 1, sd: 5, xh: 150 },
+				{ nm: "东风-35式导弹", zdl: 3000, hp: 1, sd: 5, xh: 220 }
+			],
+			[{},
+				{ nm: "核弹", zdl: 20000, hp: 1, sd: 5, xh: 1500 }
+			]
+		]
+		core.status.hero.flags.cs = cs;
+		core.status.hero.flags.gj = gj;
+		core.status.hero.flags.dw = [{}];
+		core.status.hero.flags.mil = mil;
+		var tu = [
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[1, 2, 5, 6, 9, 10, 0, 13, 14, 17, 18, 21, 22, 0, 25, 26, 29, 30, 33, 34],
+			[3, 4, 7, 8, 11, 12, 0, 15, 16, 19, 20, 23, 24, 0, 27, 28, 31, 32, 35, 36],
+			[37, 38, 41, 42, 45, 46, 0, 49, 50, 53, 54, 57, 58, 0, 61, 62, 65, 66, 69, 70],
+			[39, 40, 43, 44, 47, 48, 0, 51, 52, 55, 56, 59, 60, 0, 63, 64, 67, 68, 71, 72],
+			[73, 74, 77, 78, 81, 82, 0, 85, 86, 89, 90, 93, 94, 0, 97, 98, 101, 102, 105, 106],
+			[75, 76, 79, 80, 83, 84, 0, 87, 88, 91, 92, 95, 96, 0, 99, 100, 103, 104, 107, 108],
+			[109, 110, 113, 114, 117, 118, 0, 121, 122, 125, 126, 129, 130, 0, 133, 134, 137, 138, 141, 142],
+			[111, 112, 115, 116, 119, 120, 0, 123, 124, 127, 128, 131, 132, 0, 135, 136, 139, 140, 143, 144],
+			[145, 146, 149, 150, 153, 154, 0, 157, 158, 161, 162, 165, 166, 0, 169, 170, 173, 174, 177, 178],
+			[147, 148, 151, 152, 155, 156, 0, 159, 160, 163, 164, 167, 168, 0, 171, 172, 175, 176, 179, 180],
+			[181, 182, 185, 186, 189, 190, 0, 193, 194, 197, 198, 201, 202, 0, 205, 206, 209, 210, 213, 214],
+			[183, 184, 187, 188, 191, 192, 0, 195, 196, 199, 200, 203, 204, 0, 207, 208, 211, 212, 215, 216],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		];
+		for (var i = 0; i < tu.length; i++) {
+			for (var j = 0; j < tu[i].length; j++) {
+				var cityId = tu[i][j];
+				if (cityId === 0) continue;
+				cs[cityId].x = j;
+				cs[cityId].y = i;
+			}
+		}
+		core.status.hero.flags.tu = tu;
+		var lt = [];
+		for (var i = cs.length; i >= 0; i--) lt.push([]);
+		for (var i = cs.length; i >= 0; i--)
+			for (var j = cs.length; j >= 0; j--) lt[i].push(0);
+		for (var i = 1; i <= 54; i++) {
+			for (var j = i * 4 - 3; j <= i * 4; j++)
+				for (var k = i * 4 - 3; k <= i * 4; k++) lt[k][j] = lt[j][k] = 1;
+			if (i % 9)
+				for (var j = i * 4 - 3; j <= i * 4; j++)
+					for (var k = i * 4 + 1; k <= i * 4 + 4; k++) lt[k][j] = lt[j][k] = 1;
+			if (i <= 45)
+				for (var j = i * 4 - 3; j <= i * 4; j++)
+					for (var k = i * 4 + 33; k <= i * 4 + 36; k++) lt[k][j] = lt[j][k] = 1;
+		}
+		core.status.hero.flags.lt = lt;
+		core.status.hero.flags.color = [""];
+		var zz = [];
+		for (var i = gjm.length; i >= 0; i--) zz.push([]);
+		for (var i = gjm.length; i >= 0; i--)
+			for (var j = gjm.length; j >= 0; j--) zz[i].push(0);
+		core.status.hero.flags.zz = zz;
+		var LIMIT = 144,
+			UPPER = LIMIT * LIMIT * LIMIT;
+		for (var i = 1; i <= gjm.length; i++) {
+			var value = core.rand(UPPER);
+			var r = value % LIMIT + 48;
+			value = ~~(value / LIMIT);
+			var g = value % LIMIT + 48;
+			value = ~~(value / LIMIT);
+			var b = value % LIMIT + 48;
+			value = ~~(value / LIMIT);
+			var colorString = '#' + ("000000" + ((r << 16) + (g << 8) + b).toString(16)).substr(-6);
+			core.status.hero.flags.color.push(colorString);
+		}
+	}
+},
+	"shimSetting": function() {
+	// 轻量化的设定菜单
+
+	// 系统设置中直接显示音乐和画面设置
+	core.ui._drawSwitchs = function() {
+		core.status.event.id = 'switchs';
+		var choices = [
+			"音乐： " + (core.musicStatus.bgmStatus ? "[ON]" : "[OFF]"),
+			"音效： " + (core.musicStatus.soundStatus ? "[ON]" : "[OFF]"),
+			// 显示为 0~10 十挡
+			" <     音量：" + Math.round(Math.sqrt(100 * core.musicStatus.userVolume)) + "     > ",
+			" <     放缩：" + Math.max(core.domStyle.scale, 1) + "     > ",
+			"高清画面： " + (core.flags.enableHDCanvas ? "[ON]" : "[OFF]"),
+			"返回主菜单"
+		];
+		this.drawChoices(null, choices);
+	}
+	
+	core.actions._clickSwitchs = function (x, y) {
+		var choices = core.status.event.ui.choices;
+		var topIndex = this._getChoicesTopIndex(choices.length);
+		var selection = y - topIndex;
+		if (x < this.CHOICES_LEFT || x > this.CHOICES_RIGHT) {
+			if (selection != 2) return;
+		}
+		if (selection >= 0 && selection < choices.length) {
+			var width = choices[selection].width;
+			var leftPos = (core.__PX_WIDTH__ - width) / 2, rightPos = (core.__PX_WIDTH__ + width) / 2;
+			var leftGrid = parseInt(leftPos / 32), rightGrid = parseInt(rightPos / 32) - 1;
+			core.status.event.selection = selection;
+			switch (selection) {
+				case 0:
+					return this._clickSwitchs_sounds_bgm();
+				case 1:
+					return this._clickSwitchs_sounds_se();
+				case 2:
+					if (x == leftGrid || x == leftGrid + 1) return this._clickSwitchs_sounds_userVolume(-1);
+					if (x == rightGrid || x == rightGrid + 1) return this._clickSwitchs_sounds_userVolume(1);
+					return;
+				case 3:
+					if (x == leftGrid || x == leftGrid + 1) return this._clickSwitchs_display_setSize(-1);
+					if (x == rightGrid || x == rightGrid + 1) return this._clickSwitchs_display_setSize(1);
+					return;
+				case 4:
+					core.playSound('确定');
+					return this._clickSwitchs_display_enableHDCanvas();
+				case 5:
+					core.status.event.selection = 0;
+					core.playSound('取消');
+					core.ui._drawSettings();
+					return;
+			}
+		}
+	}
+
+	core.actions._clickSwitchs_sounds_se = function () {
+		core.musicStatus.soundStatus = !core.musicStatus.soundStatus;
+		core.setLocalStorage('soundStatus', core.musicStatus.soundStatus);
+		core.playSound('确定');
+		core.ui._drawSwitchs();
+	}
+	
+	core.actions._clickSwitchs_sounds_userVolume = function (delta) {
+		var value = Math.round(Math.sqrt(100 * core.musicStatus.userVolume));
+		if (value == 0 && delta < 0) return;
+		core.musicStatus.userVolume = core.clamp(Math.pow(value + delta, 2) / 100, 0, 1);
+		//audioContext 音效 不受designVolume 影响
+		if (core.musicStatus.gainNode != null) core.musicStatus.gainNode.gain.value = core.musicStatus.userVolume;
+		if (core.musicStatus.playingBgm) core.material.bgms[core.musicStatus.playingBgm].volume = core.musicStatus.userVolume * core.musicStatus.designVolume;
+		core.setLocalStorage('userVolume', core.musicStatus.userVolume);
+		core.playSound('确定');
+		core.ui._drawSwitchs();
+	}
+	
+	core.actions._clickSwitchs_display_setSize = function (delta) {
+		core.setDisplayScale(delta);
+		var currentRatio = Math.max(window.devicePixelRatio || 1, core.domStyle.scale);
+		if (currentRatio > core.domStyle.ratio) {
+			core.drawTip("需刷新页面以调整UI清晰度",'settings');
+		}
+		core.ui._drawSwitchs();
+	}
+	
+	core.actions._clickSwitchs_display_enableHDCanvas = function () {
+		core.flags.enableHDCanvas = !core.flags.enableHDCanvas;
+		core.setLocalStorage('enableHDCanvas', core.flags.enableHDCanvas);
+		core.drawTip("开关高清UI，需刷新页面方可生效",'settings');
+		core.ui._drawSwitchs();
+	}
+
+	////// 系统设置界面时，放开某个键的操作 //////
+	core.actions._keyUpSwitchs = function (keycode) {
+		if (keycode == 27 || keycode == 88) {
+			core.status.event.selection = 0;
+			core.playSound('取消');
+			core.ui._drawSettings();
+			return;
+		}
+		if (keycode == 37) {
+			switch (core.status.event.selection) {
+				case 2: core.playSound('确定'); return this._clickSwitchs_sounds_userVolume(-1);
+				case 3: core.playSound('确定'); return this._clickSwitchs_display_setSize(1);
+			}
+		} else if (keycode == 39) {
+			switch (core.status.event.selection) {
+				case 2: core.playSound('确定'); return this._clickSwitchs_sounds_userVolume(1);
+				case 3: core.playSound('确定'); return this._clickSwitchs_display_setSize(1);
+			}
+		}
+		this._selectChoices(core.status.event.ui.choices.length, keycode, this._clickSwitchs);
+	}
+
+	// 去掉浏览地图，将录像回放设为一级菜单
+	core.ui._drawSettings = function () {
+		core.status.event.id = 'settings';
+		this.drawChoices(null, [
+			"系统设置", "虚拟键盘", "存档笔记", "同步存档", "录像回放", "游戏信息", "返回标题", "返回游戏"
+		]);
+	}
+	
+	core.actions._clickSettings = function (x, y) {
+		if (x < this.CHOICES_LEFT || x > this.CHOICES_RIGHT) return;
+		var choices = core.status.event.ui.choices;
+		var topIndex = this._getChoicesTopIndex(choices.length);
+		if (y >= topIndex && y < topIndex + choices.length) {
+			var selection = y - topIndex;
+			core.status.event.selection = selection;
+			switch (selection) {
+				case 0:
+					core.status.event.selection = 0;
+					core.playSound('确定');
+					core.ui._drawSwitchs();
+					break;
+				case 1:
+					// core.playSound('确定');
+					core.ui._drawKeyBoard();
+					break;
+				case 2:
+					core.status.event.selection = 0;
+					core.playSound('确定');
+					core.ui._drawNotes();
+					break;
+				case 3:
+					core.status.event.selection = 0;
+					core.playSound('确定');
+					core.ui._drawSyncSave();
+					break;
+				case 4:
+					core.status.event.selection = 0;
+					core.playSound('确定');
+					core.ui._drawReplay();
+					break;
+				case 5:
+					core.status.event.selection = 0;
+					core.playSound('确定');
+					core.ui._drawGameInfo();
+					break;
+				case 6:
+					return core.confirmRestart();
+				case 7:
+					core.playSound('取消');
+					core.ui.closePanel();
+					break;
+			}
+		}
+		return;
+	}
+},
+	"click": function() {
+		
+	core.control.setAutomaticRoute = function (destX, destY, stepPostfix) {
+		var cityId = flags.tu[destY-1][destX];
+		if (cityId === 0) return;
+		var city = flags.cs[cityId];
+		if (!flags.xzgj) {
+			flags.selection = city.gj;
+			extendUI.update();
+		} else {
+
+		}
+	}
+	core.control._setAutomaticRoute_drawRoute = function (moveStep) {
+
+	}
+    core.unregisterAction('ondown', '_sys_ondown');
+    core.registerAction('ondown', '_sys_ondown', function (x, y, px, py) {
+		if (core.status.lockControl) return false;
+		core.status.downTime = new Date();
+		core.deleteCanvas('route');
+		var pos = {'x': parseInt((px + core.bigmap.offsetX) / 32), 'y': parseInt((py + core.bigmap.offsetY) / 32)};
+		core.status.stepPostfix = [];
+		core.status.stepPostfix.push(pos);
+		core.fillRect('ui', pos.x*32+12-core.bigmap.offsetX,pos.y*32+12-core.bigmap.offsetY,8,8, '#bfbfbf');
+	
+		clearTimeout(core.timeout.onDownTimeout);
+		core.timeout.onDownTimeout = null;
+		core.status.preview.prepareDragging = false;
+		if (!core.hasFlag('__lockViewport__') && (core.status.thisMap.width > core.__WIDTH__ || core.status.thisMap.height > core.__HEIGHT__)) {
+			core.status.preview.prepareDragging = true;
+			core.status.preview.px = px;
+			core.status.preview.py = py;
+			core.timeout.onDownTimeout = setTimeout(function () {
+				core.clearMap('ui');
+				core.status.preview.prepareDragging = false;
+				core.status.preview.enabled = true;
+				core.status.preview.dragging = true;
+				core.drawTip('已进入预览模式，可直接拖动大地图','upFloor');
+				core.status.stepPostfix = [];
+			}, 500);
+		} 
+	}, 0);
+    core.unregisterAction('onmove', '_sys_onmove');
+    core.registerAction('onmove', '_sys_onmove', function (x, y, px, py) {
+		if (core.status.lockControl) return false;
+	
+		if (core.status.preview.dragging) {
+			core.setViewport(core.bigmap.offsetX - px + core.status.preview.px, core.bigmap.offsetY - py + core.status.preview.py);
+			core.status.preview.px = px;
+			core.status.preview.py = py;
+			return true;
+		}
+		if (core.status.preview.prepareDragging) {
+			if (Math.abs(px - core.status.preview.px) <= 20 && Math.abs(py - core.status.preview.py) <= 20) 
+				return true;
+			else core.status.preview.prepareDragging = false;
+		}
+	
+		clearTimeout(core.timeout.onDownTimeout);
+		core.timeout.onDownTimeout = null;
+	
+		if ((core.status.stepPostfix || []).length > 0) {
+			var pos = {'x': parseInt((px + core.bigmap.offsetX) / 32), 'y': parseInt((py + core.bigmap.offsetY) / 32)};
+			var pos0 = core.status.stepPostfix[core.status.stepPostfix.length - 1];
+			var directionDistance = [pos.y - pos0.y, pos0.x - pos.x, pos0.y - pos.y, pos.x - pos0.x];
+			var max = 0, index = 4;
+			for (var ii = 0; ii < 4; ii++) {
+				if (directionDistance[ii] > max) {
+					index = ii;
+					max = directionDistance[ii];
+				}
+			}
+			pos = [{'x': 0, 'y': 1}, {'x': -1, 'y': 0}, {'x': 0, 'y': -1}, {'x': 1, 'y': 0}, false][index]
+			if (pos) {
+				pos.x += pos0.x;
+				pos.y += pos0.y;
+				core.status.stepPostfix.push(pos);
+				// core.fillRect('ui', pos.x*32+12-core.bigmap.offsetX,pos.y*32+12-core.bigmap.offsetY,8,8, '#bfbfbf');
+			}
+		}
+		return true;
+	}, 0);
+},
+	"gameLogic": function() {
+
+	function updateStat() {
+		var playerIC = 0,
+			playerRD = 0,
+			globalIC = 0,
+			globalRD = 0;
+		for (var i = 1; i < flags.cs.length; i++) {
+			var city = flags.cs[i];
+			if (city.gj == flags.xzgj) {
+				playerIC += city.ic, playerRD += city.kj;
+			}
+			globalIC += city.ic, globalRD += city.kj;
+		}
+		core.status.hero.atk = playerIC, core.status.hero.def = playerRD;
+		core.status.hero.mdef = globalIC, core.status.hero.exp =globalRD;
+	}
+
+	var startGame = function() {
+		flags.xzgj = flags.selection;
+		updateStat();
+		extendUI.update();
+	};
+
+	extendUI.registerCommand("startGame", function() {
+		core.status.route.push("start:"+flags.selection);
+		startGame();
+	});
+
+	core.registerReplayAction("startGame", function(action) {
+		if (!action.startsWith("start:")) return false;
+		flags.selection = action.substring(6);
+		extendUI.update();
+		setTimeout(function() {
+			startGame();
+			setTimeout(function() {
+				core.replay();
+			}, core.control.__replay_getTimeout());
+		}, core.control.__replay_getTimeout());
+	});
+	
+	function nextTurn() {
+		// money 代表时间 (很奇怪)
+		core.status.hero.money++;
+		
+		// 30 回合前不宣战, 30回合之后每个AI 在未宣战时会选择一个国家开战
+		(function() {
+			if (core.status.hero.money >= 30) {
+				var _ = [],
+					__ = [0];
+				for (var i = 0; i < flags.gj.length; i++) _.push([]);
+				for (var i = 0; i < flags.gj.length; i++)
+					for (var j = 0; j < flags.gj.length; j++) _[i].push(0);
+				for (var i = 1; i < flags.cs.length; i++) {
+					for (var j = 1; j < flags.cs.length; j++)
+						if (flags.lt[i][j] && flags.cs[i].gj != flags.cs[j].gj) _[flags.cs[i].gj][flags.cs[j].gj] = 1;
+				}
+				for (var i = 1; i < flags.gj.length; i++) {
+					var t = [];
+					for (var j = 1; j < flags.gj.length; j++)
+						if (_[i][j] && !flags.zz[i][j]) t.push(j);
+					for (var j = 1; j < flags.gj.length; j++)
+						if (_[i][j] && flags.zz[i][j]) t = [];
+					if (i == flags.xzgj) t = [];
+					if (t.length) __.push(t[core.rand(t.length)]);
+					else __.push(0);
+				}
+				var s = "",
+					cnt = 0;
+				_ = [];
+				for (var i = 1; i < flags.gj.length; ++i)
+					if (__[i]) {
+						s += flags.gj[i].nm + "和" + flags.gj[__[i]].nm + "宣战" + String.fromCharCode(10);
+						cnt += 1;
+						if (cnt >= 20) _.push(s), cnt = 0, s = "";
+						flags.zz[i][__[i]] = flags.zz[__[i]][i] = 1;
+					}
+				if (s) _.push(s);
+				core.insertAction(_);
+			}
+		})();
+
+		// 处理死亡国家
+		(function() {
+			flags.city = [0];
+			for (var i = 1; i < flags.gj.length; i++) flags.city.push(0);
+			for (var i = 1; i < flags.cs.length; i++) flags.city[flags.cs[i].gj] += 1;
+			for (var i = 1; i < flags.cs.length; i++)
+				if (flags.cs[i].hp > 0 && flags.cs[i].hp < flags.cs[i].HP) flags.cs[i].hp += Math.max(10, Math.floor((flags.cs[i].HP - flags.cs[i].hp) / 100));
+			for (var i = 1; i < flags.gj.length; i++)
+				if (flags.city[i] == 0 && !flags.gj[i].sile) {
+					flags.gj[i].sile = 1;
+					core.insertAction("         " + flags.gj[i].nm + "  战败!");
+				}
+			for (var i = 1; i < flags.dw.length; i++)
+				if (flags.gj[flags.dw[i].gj].sile) flags.dw[i].hp = -1;
+		})();
+		
+		if (flags.city[flags.xzgj] >= flags.cs.length-1) {
+			core.status.hero.hp = 1000 - core.status.hero.money;
+			core.win("恭喜 " + flags.gj[flags.xzgj].nm + " 胜利！", true);
+		}
+		if (flags.gj[flags.xzgj].sile) {
+			core.status.hero.hp = 0;
+			for (var i = 1; i < flags.gj.length; i++)
+				if (!flags.gj[i].sile) core.status.hero.hp -= 1;
+			core.win("你死了！", true);
+		}
+
+		// 处理转移
+		(function() {
+			for (var i = 1; i < flags.cs.length; i++) flags.cs[i].lin = [];
+			for (var i = 1; i < flags.dw.length; i++)
+				if (flags.dw[i].hp > 0 && flags.dw[i].mbsj <= 0 && flags.dw[i].mb > 0 && flags.cs[flags.dw[i].mb].gj != flags.dw[i].gj) {
+					flags.cs[flags.dw[i].mb].lin.push(i);
+				}
+			for (var i = 1; i < flags.cs.length; i++) flags.cs[i].lin.sort(function (a, b) { return flags.dw[a].mbsj - flags.dw[b].mbsj; });
+			var _ = "";
+			for (var i = 1; i < flags.cs.length; i++)
+				if (flags.cs[i].lin.length > 0 && flags.cs[i].v.length == 0 && flags.cs[i].hp <= 0 && flags.dw[flags.cs[i].lin[0]].mbsj <= 0) {
+					flags.cs[i].hp = 1;
+					flags.cs[i].gj = flags.dw[flags.cs[i].lin[0]].gj;
+					_ += ("     " + flags.gj[flags.cs[i].gj].nm + "  占领了  " + flags.cs[i].nm + "  ！") + String.fromCharCode(10);
+					flags.cs[i].sc = [];
+				}
+			if (_) core.insertAction(_);
+			for (var i = 1; i < flags.dw.length; i++)
+				if (flags.dw[i].hp > 0) {
+					if (flags.dw[i].mbsj > 0) flags.dw[i].mbsj -= flags.mil[flags.dw[i].zl][flags.dw[i].xh].sd;
+					else if (flags.dw[i].mb) flags.dw[i].mbsj -= 10;
+					if (flags.dw[i].mbsj < 0) {
+						if (flags.zz[flags.dw[i].gj][flags.cs[flags.dw[i].mb].gj]) continue;
+						if (flags.dw[i].zl >= 4) flags.dw[i].mb = flags.dw[i].mbsj = 0, flags.gj[flags.dw[i].gj].dd.push(i);
+						else if (flags.cs[flags.dw[i].mb].gj == flags.dw[i].gj) flags.cs[flags.dw[i].mb].v.push(i), flags.dw[i].mb = flags.dw[i].mbsj = 0;
+						else {
+							for (var k = 1; k < flags.cs.length; k++)
+								if (flags.cs[k].gj == flags.dw[i].gj) flags.dw[i].mb = k, flags.dw[i].mbsj = 10;
+						}
+					}
+				}
+		})();
+		
+		// 处理科研
+		(function() {
+			for (var i = 1; i < flags.gj.length; i++) {
+				var kynl = 0,
+				yffx = flags.gj[i].yffx;
+				var f1 = flags.gj[i].yffy[1][5] < 0,
+					f2 = flags.gj[i].yffy[2][5] < 0,
+					f3 = flags.gj[i].yffy[3][5] < 0,
+					f4 = flags.gj[i].yffy[4][3] < 0,
+					f5 = flags.gj[i].yffy[5][1] < 0;
+				if (yffx == 0) yffx = 3;
+				if (yffx == 5 && f5) yffx = 1;
+				if (yffx == 1 && f1) yffx = 2;
+				if (yffx == 2 && f2) yffx = 3;
+				if (yffx == 3 && f3) yffx = 4;
+				if (yffx == 4 && f4) yffx = 1;
+				if (yffx == 1 && f1) yffx = 2;
+				if (yffx == 2 && f2) yffx = 3;
+				if (yffx == 3 && f3) yffx = 4;
+				if (yffx == 4 && f4) yffx = 5;
+				if (yffx == 5 && f5) yffx = 0;
+				flags.gj[i].yffx = yffx;
+				if (yffx) {
+					var now = 1;
+					while (flags.gj[i].yffy[yffx][now] <= 0) now = now + 1;
+				}
+				for (var j = 1; j < flags.cs.length; j++)
+					if (flags.cs[j].gj == i) kynl += flags.cs[j].kj;
+				flags.gj[i].yffy[yffx][now] -= kynl;
+				if (flags.gj[i].yffy[yffx][now] <= 0 && i == flags.xzgj) core.insertAction('  ' + flags.mil[yffx][now].nm + ' 研发完成 ！');
+			}
+		})();
+
+		// 处理生产/人口增长
+		(function() {
+			var str = "";
+			for (var i = 1; i < flags.cs.length; i++) {
+				flags.cs[i].rk += flags.cs[i].rkzz;
+				if (flags.cs[i].sc.length > 0) {
+					flags.cs[i].sc[0].ys -= flags.cs[i].ic;
+					if (flags.cs[i].sc[0].ys <= 0 && flags.cs[i].rk >= [10, 10, 10, 10, 10, 10, 10, 10, 100, 50][flags.cs[i].sc[0].lx]) {
+						if (flags.cs[i].sc[0].lx == 8) {
+							flags.cs[i].ic += 1;
+							flags.cs[i].rk -= 100;
+							if (flags.cs[i].gj == flags.xzgj) str += "   工厂   于    " + flags.cs[i].nm + " 制造厂  生产完成 ！" + String.fromCharCode(10);
+						} else if (flags.cs[i].sc[0].lx == 9) {
+							flags.cs[i].kj += 1;
+							flags.cs[i].rk -= 50;
+							if (flags.cs[i].gj == flags.xzgj) str += "  科研所  于    " + flags.cs[i].nm + " 制造厂  生产完成 ！" + String.fromCharCode(10);
+						} else if (flags.cs[i].sc[0].lx >= 4) {
+							flags.cs[i].rk -= 10;
+							flags.dw.push({
+								zl: flags.cs[i].sc[0].lx,
+								xh: flags.cs[i].sc[0].xh,
+								mb: 0,
+								mbsj: 0,
+								hp: flags.mil[flags.cs[i].sc[0].lx][flags.cs[i].sc[0].xh].hp,
+								gj: flags.cs[i].gj
+							});
+							flags.gj[flags.cs[i].gj].dd.push(flags.dw.length - 1);
+							if (flags.cs[i].gj == flags.xzgj) str += "   " + flags.mil[flags.cs[i].sc[0].lx][flags.cs[i].sc[0].xh].nm + "   于    " + flags.cs[i].nm + " 制造厂  生产完成 ！" + String.fromCharCode(10);
+						} else {
+							flags.cs[i].rk -= 10;
+							flags.dw.push({
+								zl: flags.cs[i].sc[0].lx,
+								xh: flags.cs[i].sc[0].xh,
+								mb: 0,
+								mbsj: 0,
+								hp: flags.mil[flags.cs[i].sc[0].lx][flags.cs[i].sc[0].xh].hp,
+								gj: flags.cs[i].gj
+							});
+							flags.cs[i].v.push(flags.dw.length - 1);
+							if (flags.cs[i].gj == flags.xzgj) str += "   " + flags.mil[flags.cs[i].sc[0].lx][flags.cs[i].sc[0].xh].nm + "   于    " + flags.cs[i].nm + " 制造厂  生产完成 ！" + String.fromCharCode(10);
+						}
+						var ys = flags.cs[i].sc[0].ys;
+						flags.cs[i].sc.splice(0, 1);
+						if (flags.cs[i].sc.length > 0) flags.cs[i].sc[0].ys += ys;
+					}
+				}
+			}
+			if (str) core.insertAction(str);
+			for (var i = 1; i < flags.cs.length; i++) flags.cs[i].lin = [];
+			for (var i = 1; i < flags.dw.length; i++)
+				if (flags.dw[i].hp > 0 && flags.dw[i].mbsj <= 0 && flags.dw[i].mb > 0 && flags.cs[flags.dw[i].mb].gj != flags.dw[i].gj) {
+					flags.cs[flags.dw[i].mb].lin.push(i);
+				}
+			for (var i = 1; i < flags.cs.length; i++) flags.cs[i].lin.sort(function (a, b) { return flags.dw[a].mbsj - flags.dw[b].mbsj; });
+		})();
+
+		// 战争！
+		(function() {
+			for (let i = 1; i < flags.cs.length; i++) {
+				flags._ = i;
+				if (flags.cs[flags._].lin.length === 0) {
+					if (flags.cs[flags._].hp < 0) flags.cs[flags._].hp = 1;
+					if (flags.cs[flags._].hp < 10) flags.cs[flags._].hp += 10;
+					else if (flags.cs[flags._].hp < flags.cs[flags._].HP) flags.cs[flags._].hp += Math.max(500, Math.floor((flags.cs[flags._].HP - flags.cs[flags._].hp) / 30));
+					continue;
+				}
+				
+				flags.show = flags.cs[flags._].gj == flags.xzgj;
+				for (let i = 0; i < flags.cs[flags._].lin.length; i++)
+					if (flags.dw[flags.cs[flags._].lin[i]].gj == flags.xzgj) flags.show = true;
+				if (flags.show) {
+
+				}
+				let t = flags.cs[flags._].lin,
+					u = flags.cs[flags._].v;
+				let __ = [];
+				for (let i = 0; i < t.length; i++) {
+					let zdl = flags.mil[flags.dw[t[i]].zl][flags.dw[t[i]].xh].zdl;
+					if (flags.dw[t[i]].zl < 4) continue;
+					if (flags.dw[t[i]].zl == 5) __.push("${flags.cs[flags._].nm} 受到了来自 " + flags.gj[flags.dw[t[i]].gj].nm + "  的核打击！ ");
+					if (flags.cs[flags._].hp >= zdl / 10) flags.cs[flags._].hp -= zdl;
+					else {
+						console.log('ATTACK');
+						flags.cs[flags._].hp = 0;
+						let count = flags.dw[t[i]].zl == 5 ? 50 : [0, 1, 3, 10][flags.dw[t[i]].xh];
+						let damage = flags.dw[t[i]].zl == 5 ? 400 : 300;
+						for (let j = 0, k = 0; j < u.length && k < count; j++) {
+							if (flags.dw[u[j]].hp > 0) flags.dw[u[j]].hp -= damage, k += 1;
+						}
+					}
+					flags.dw[t[i]].hp = 0;
+				}
+				for (let i = 0; i < t.length; i++) {
+					if (flags.dw[t[i]].zl > 3) continue;
+					let zdl = flags.mil[flags.dw[t[i]].zl][flags.dw[t[i]].xh].zdl;
+					if (u.length == 0 || flags.cs[flags._].hp > 0 && core.rand(5) < 3) { flags.cs[flags._].hp -= zdl; continue; }
+					let v = [];
+					for (let j = 0; j < u.length; j++)
+						if (flags.dw[u[j]].hp > 0) v.push(u[j]);
+					if (v.length == 0) { flags.cs[flags._].hp -= zdl; continue; }
+					let w = v[core.rand(v.length)];
+					zdl = Math.round(zdl * (0.9 + 0.2 * core.rand()));
+					flags.dw[w].hp -= zdl;
+				}
+				for (let i = 0; i < u.length; i++) {
+					let zdl = flags.mil[flags.dw[u[i]].zl][flags.dw[u[i]].xh].zdl;
+					let v = [];
+					for (let j = 0; j < t.length; j++)
+						if (flags.dw[t[j]].hp > 0) v.push(t[j]);
+					if (v.length == 0) continue;
+					let w = v[core.rand(v.length)];
+					zdl = Math.round(zdl * (0.9 + 0.2 * core.rand()));
+					flags.dw[w].hp -= zdl;
+				}
+				if (flags.show) {
+					//lin
+					let v = [],
+						w = 25;
+					for (let i = 0; i < t.length; i++) {
+						let s = "";
+						if (flags.dw[t[i]].hp <= 0 && flags.dw[t[i]].zl < 4) {
+							if (flags.cs[flags._].gj == flags.xzgj) s = "  对方损失  " + flags.mil[flags.dw[t[i]].zl][flags.dw[t[i]].xh].nm + "  ！" + String.fromCharCode(10);
+							else if (flags.dw[t[i]].gj == flags.xzgj) s = "  我方损失  " + flags.mil[flags.dw[t[i]].zl][flags.dw[t[i]].xh].nm + "  ！" + String.fromCharCode(10);
+						}
+						if (s) {
+							if (w >= 25) v.push(s), w = 1;
+							else v[v.length - 1] += s, w += 1;
+						}
+
+					}
+					for (let i = 0; i < v.length; i++) __.push(v[i]);
+					v = [], w = 25;
+					for (let i = 0; i < u.length; i++) {
+						let s = "";
+						if (flags.dw[u[i]].hp <= 0 && flags.dw[u[i]].zl < 4) {
+							if (flags.cs[flags._].gj == flags.xzgj) s = "  我方损失  " + flags.mil[flags.dw[u[i]].zl][flags.dw[u[i]].xh].nm + "  ！" + String.fromCharCode(10);
+							else s = "  对方损失  " + flags.mil[flags.dw[u[i]].zl][flags.dw[u[i]].xh].nm + "  ！" + String.fromCharCode(10);
+						}
+						if (s) {
+							if (w >= 25) v.push(s), w = 1;
+							else v[v.length - 1] += s, w += 1;
+						}
+
+					}
+					for (let i = 0; i < v.length; i++) __.push(v[i]);
+					console.log(__);
+					core.insertAction(__);
+					core.fillText('test2', "      " + (flags.cs[flags._].gj == flags.xzgj ? "我" : "对") + "方城市【" + flags.cs[flags._].nm + " (" + flags._ + ")" + "】防御值剩余： " + flags.cs[flags._].hp, 0, 320 - 5, [255, 255, 255, 1], "20px Arial");
+				}
+				let v = [],
+					w = [];
+				for (let i = 0; i < t.length; i++)
+					if (flags.dw[t[i]].hp > 0) v.push(t[i]);
+				for (let i = 0; i < u.length; i++)
+					if (flags.dw[u[i]].hp > 0) w.push(u[i]);
+				flags.cs[flags._].lin = v, flags.cs[flags._].v = w;
+			}
+		})();
+
+		// AI
+		(function() {
+			for (var i = 1; i < flags.gj.length; i++)
+				if (i != flags.xzgj && !flags.gj[i].sile) {
+					var city = [],
+						cnt = 0;
+					for (var j = 1; j < flags.cs.length; j++)
+						if (flags.cs[j].gj == i) {
+							var kyzz = 0;
+							cnt = cnt + 1;
+							for (var k = 1; k < flags.cs.length; k++)
+								if (flags.lt[k][j] && flags.zz[flags.cs[j].gj][flags.cs[k].gj] && (kyzz == 0 || flags.cs[k].hp < flags.cs[kyzz].hp)) kyzz = k;
+							if (kyzz > 0 || flags.cs[j].lin.length > 0) city.push(j);
+						}
+					if (city.length == 0) {
+						for (var j = 1; j < flags.cs.length; j++)
+							if (flags.cs[j].gj == i) city.push(j);
+					}
+					flags.gj[i].yffx = core.rand(4) + 1;
+					if (flags.gj[i].yffx <= 2 && flags.gj[i].yffy[5][1] > 0) flags.gj[i].yffx = 5;
+					for (var j = 1; j < flags.cs.length; j++)
+						if (flags.cs[j].gj == i) {
+							var kyzz = 0;
+							for (var k = 1; k < flags.cs.length; k++)
+								if (flags.lt[k][j] && flags.zz[flags.cs[j].gj][flags.cs[k].gj] && (kyzz == 0 || flags.cs[k].hp < flags.cs[kyzz].hp)) kyzz = k;
+							if (kyzz && flags.gj[i].dd.length > 0 && core.rand(5) < 2 && (flags.cs[kyzz].hp > 4000 || flags.cs[kyzz].v.length > 5)) {
+								flags.dw[flags.gj[i].dd[0]].mb = kyzz;
+								flags.dw[flags.gj[i].dd[0]].mbsj = 20;
+								flags.gj[i].dd.splice(0, 1);
+							}
+							if (!kyzz && !flags.cs[j].lin.length) {
+								var l = Math.floor((flags.cs[j].v.length - 1) / 2);
+								if (l > 0 && cnt > 2) {
+									for (var k = 0; k < l; k++) {
+										flags.dw[flags.cs[j].v[k]].mb = city[core.rand(city.length)];
+										flags.dw[flags.cs[j].v[k]].mbsj = 10;
+									}
+									flags.cs[j].v.splice(0, l);
+								}
+							}
+							if (kyzz && !flags.cs[j].lin.length) {
+								var l = Math.floor((flags.cs[j].v.length - 1) / 1.7);
+								if (l > 0) {
+									for (var k = 0; k < l; k++) {
+										flags.dw[flags.cs[j].v[k]].mb = kyzz;
+										flags.dw[flags.cs[j].v[k]].mbsj = 10;
+									}
+									flags.cs[j].v.splice(0, l);
+								}
+							}
+							if (flags.cs[j].sc.length > 0) continue;
+							var sj = core.rand(100);
+							var _ = Math.pow(2, flags.cs[j].rk / 100);
+							if (sj <= _ && flags.cs[j].rk + (100 / flags.cs[j].ic + 2) * flags.cs[j].rkzz >= 100) flags.cs[j].sc.push({ lx: 8, xh: 1, ys: 100 });
+							else if (sj <= _ + _ && flags.cs[j].rk + (100 / flags.cs[j].ic + 2) * flags.cs[j].rkzz >= 50) flags.cs[j].sc.push({ lx: 9, xh: 1, ys: 100 });
+							if (flags.cs[j].sc.length > 0) continue;
+							sj = core.rand(100);
+							if (sj <= 4 && flags.cs[j].ic >= 8 && flags.gj[i].yffy[5][1] <= 0) flags.cs[j].sc.push({ lx: 5, xh: 1, ys: 1500 });
+							else {
+								var lx = sj <= 57 ? 3 : sj <= 73 ? 2 : sj <= 94 ? 1 : 4;
+								var xh = 0;
+								while (flags.gj[i].yffy[lx][xh + 1] <= 0 && xh < 5) xh += 1;
+								if (lx == 4 && xh > 3) xh = 3;
+								if (xh > 0) flags.cs[j].sc.push({ lx: lx, xh: xh, ys: flags.mil[lx][xh].xh });
+							}
+						}
+				}
+		})();
+		updateStat();
+		core.drawMap();
+		core.autosave();
+		extendUI.update();
+	}
+
+	extendUI.registerCommand("nextTurn", function() {
+		core.status.route.push("next")
+		nextTurn();
+	});
+	
+	core.registerReplayAction("nextTurn", function(action) {
+		if (action !== "next") return false;
+		nextTurn();
+		setTimeout(function() {
+			core.replay();
+		}, core.control.__replay_getTimeout());
+		return true;
+	});
 }
 }

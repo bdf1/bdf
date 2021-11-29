@@ -1,0 +1,121 @@
+.sidebar {
+    /* 战争 */
+    .war {
+        background-color: #B71C1C;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .empty {
+            flex-grow: 1;
+    
+            color: #EEEEEE;
+            text-align: center;
+        }
+    }
+    /* 科研 */
+    .research {
+        background-color: #01579B;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        cursor: pointer;
+        .warning {
+            width: 20rem;
+            height: 20rem;
+        }
+        .process {
+            flex-grow: 1;
+            margin-left: 5rem;
+        }
+        .process-label {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: baseline;
+            justify-content: space-between;
+            .name {
+                color: #EEEEEE;
+            }
+            .value {
+                font-size: 12rem;
+                color: #EEEEEE;
+                font-family: 'Consolas', monospace;
+            }
+        }
+        .process-bar {
+            background-color: #AAAAAA;
+            height: 3rem;
+        }
+        .empty {
+            flex-grow: 1;
+    
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: center;
+    
+            color: #EEEEEE;
+        }
+    }
+
+    .city {
+        padding: 3rem;
+        background-color: #555555;
+        .stat {
+            color: #EEEEEE;
+        }
+    }
+    .city-item {
+        padding: 2rem;
+        background-color: #666666;
+    }
+    .city-item .base-info, .city-item .stat {
+        font-family: 'Consolas', monospace;
+        color: #EEEEEE;
+        display: flex;
+    }
+    .city-item .stat .data {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        min-width: 40rem;
+        margin-right: 5rem;
+    }
+    .city-item .stat .icon {
+        width: 16rem;
+        height: 16rem;
+        margin-right: 5rem;
+    }
+
+    .battle {
+        background-color: #3E2723;
+    }
+
+    .missle {
+        background-color: #E16B03;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .missle.disabled {
+        background-color: #424242;
+    }
+
+    .missle .empty {
+        flex-grow: 1;
+
+        color: #EEEEEE;
+        text-align: center;
+    }
+
+    .next-turn {
+        margin-top: auto;
+        background-color: #455A64;
+        color: #EEEEEE;
+        font-weight: bold;
+        text-align: center;
+
+        cursor: pointer;
+    }
+}

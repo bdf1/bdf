@@ -43,6 +43,8 @@ def is_sub(filename):
 		return True
 
 def get_mimetype(path):
+	if path[-3:] == ".js":
+		return 'application/javascript'
 	return mimetypes.guess_type(path)[0] or 'application/octet-stream'
 
 def get_file(path):

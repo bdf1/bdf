@@ -1,0 +1,6 @@
+{
+    "less.compile": {
+      "main": "${workspaceRoot}/ui/main.less",
+      "compress": true,
+    }
+}
