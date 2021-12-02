@@ -1168,15 +1168,16 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 					nm: gjm[i],
 					sile: false,
 					dd: [],
-					yffx: 0,
-					yffy: [
-						[],
-						[0, 0, 0, 4000, 1e4, 2e4],
-						[0, 0, 2000, 8000, 2e4, 4.8e4],
-						[0, 0, 1e4, 4e4, 7e4, 11e4],
-						[0, 3000, 1e4, 6e4],
-						[0, 2e4]
-					]
+					research: {
+						field: 0,
+						fields: {
+							"1": { levels: [0, 0, 0, 4000, 1e4, 2e4], level: 2, pass: 0 },
+							"2": { levels: [0, 0, 2000, 8000, 2e4, 4.8e4], level: 1, pass: 0 },
+							"3": { levels: [0, 0, 1e4, 4e4, 7e4, 11e4], level: 1, pass: 0 },
+							"4": { levels: [0, 3000, 1e4, 6e4], level: 0, pass: 0 },
+							"5": { levels: [0, 2e4], level: 0, pass: 0 },
+						},
+					},
 				});
 			}
 		var mil = [
@@ -1673,33 +1674,41 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		// 处理科研
 		(function() {
 			for (var i = 1; i < flags.gj.length; i++) {
-				var kynl = 0,
-				yffx = flags.gj[i].yffx;
-				var f1 = flags.gj[i].yffy[1][5] < 0,
-					f2 = flags.gj[i].yffy[2][5] < 0,
-					f3 = flags.gj[i].yffy[3][5] < 0,
-					f4 = flags.gj[i].yffy[4][3] < 0,
-					f5 = flags.gj[i].yffy[5][1] < 0;
-				if (yffx == 0) yffx = 3;
-				if (yffx == 5 && f5) yffx = 1;
-				if (yffx == 1 && f1) yffx = 2;
-				if (yffx == 2 && f2) yffx = 3;
-				if (yffx == 3 && f3) yffx = 4;
-				if (yffx == 4 && f4) yffx = 1;
-				if (yffx == 1 && f1) yffx = 2;
-				if (yffx == 2 && f2) yffx = 3;
-				if (yffx == 3 && f3) yffx = 4;
-				if (yffx == 4 && f4) yffx = 5;
-				if (yffx == 5 && f5) yffx = 0;
-				flags.gj[i].yffx = yffx;
-				if (yffx) {
-					var now = 1;
-					while (flags.gj[i].yffy[yffx][now] <= 0) now = now + 1;
+				var player = flags.gj[i];
+				if (player.sile) continue;
+				var research = player.research;
+				var field = research.field;
+				// AI 自动调整研究方向
+				if (field === 0 && i !== flags.xzgj) {
+					// 研究方向序列
+					var _fields = [ 3, 5, 1, 2, 3, 4, 1, 2, 3, 4, 5 ];
+					for (let _field of _fields) {
+						let status = research.fields[_field];
+						if (status.level < status.length - 1) {
+							research.field == _field;
+							field = _field;
+							break;
+						}
+					}
 				}
-				for (var j = 1; j < flags.cs.length; j++)
-					if (flags.cs[j].gj == i) kynl += flags.cs[j].kj;
-				flags.gj[i].yffy[yffx][now] -= kynl;
-				if (flags.gj[i].yffy[yffx][now] <= 0 && i == flags.xzgj) core.insertAction('  ' + flags.mil[yffx][now].nm + ' 研发完成 ！');
+				// 其实只有玩家才会被这个坑，，，23333
+				if (field === 0) continue;
+				var status = research.fields[field];
+				var totalRD = 0;
+				for (var j = 1; j < flags.cs.length; j++) {
+					if (flags.cs[j].gj == i) totalRD += flags.cs[j].kj;
+				}
+				status.pass += totalRD;
+				if (status.pass > status.levels[status.level + 1]) {
+					status.level += 1;
+					status.pass = 0;
+					if (status.level === status.length - 1) {
+						research.field = 0;
+					}
+					if (i === flags.xzgj) {
+						// 消息提示
+					}
+				}
 			}
 		})();
 
@@ -1880,8 +1889,11 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 						for (var j = 1; j < flags.cs.length; j++)
 							if (flags.cs[j].gj == i) city.push(j);
 					}
-					flags.gj[i].yffx = core.rand(4) + 1;
-					if (flags.gj[i].yffx <= 2 && flags.gj[i].yffy[5][1] > 0) flags.gj[i].yffx = 5;
+					// 科研
+					var research = flags.gj[i].research;
+					research.field = core.rand(4) + 1;
+					if (research.field <= 2 && research.fields[5].level < 1) research.field = 5;
+
 					for (var j = 1; j < flags.cs.length; j++)
 						if (flags.cs[j].gj == i) {
 							var kyzz = 0;
@@ -1919,12 +1931,10 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 							else if (sj <= _ + _ && flags.cs[j].rk + (100 / flags.cs[j].ic + 2) * flags.cs[j].rkzz >= 50) flags.cs[j].sc.push({ lx: 9, xh: 1, ys: 100 });
 							if (flags.cs[j].sc.length > 0) continue;
 							sj = core.rand(100);
-							if (sj <= 4 && flags.cs[j].ic >= 8 && flags.gj[i].yffy[5][1] <= 0) flags.cs[j].sc.push({ lx: 5, xh: 1, ys: 1500 });
+							if (sj <= 4 && flags.cs[j].ic >= 8 && research.fields[5].level > 0) flags.cs[j].sc.push({ lx: 5, xh: 1, ys: 1500 });
 							else {
 								var lx = sj <= 57 ? 3 : sj <= 73 ? 2 : sj <= 94 ? 1 : 4;
-								var xh = 0;
-								while (flags.gj[i].yffy[lx][xh + 1] <= 0 && xh < 5) xh += 1;
-								if (lx == 4 && xh > 3) xh = 3;
+								var xh = research.fields[lx].level;
 								if (xh > 0) flags.cs[j].sc.push({ lx: lx, xh: xh, ys: flags.mil[lx][xh].xh });
 							}
 						}
@@ -1948,6 +1958,24 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			core.replay();
 		}, core.control.__replay_getTimeout());
 		return true;
+	});
+
+	function setResearchField(field) {
+		const research = flags.gj[flags.xzgj].research;
+		research.field = field;
+		extendUI.update();
+	}
+
+	extendUI.registerCommand("setResearchField", function(payload) {
+		var field = payload.field;
+		core.status.route.push("research:" + field);
+		setResearchField(field);
+	});
+
+	core.registerReplayAction("setResearchField", function(action) {
+		if (!action.startsWith("research:")) return false;
+		var field = action.substring(9);
+		setResearchField(field);
 	});
 }
 }

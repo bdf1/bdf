@@ -1,8 +1,6 @@
 export const WIcon = Vue.extend({
     template: /* HTML */`
-    <div class="icon">
-        <img :src="'img/icons8-' + icon +'.png'"/>
-    </div>
+    <img class="icon" :src="'img/icons8-' + icon +'.png'"/>
     `,
     props: {
         icon: String,

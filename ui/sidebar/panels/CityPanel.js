@@ -2,7 +2,7 @@ import { extendUI } from "../../index.js";
 
 export const CityPanel = Vue.extend({
     template: /* HTML */`
-    <div class="sidebar-item city">
+    <div class="sidebar-item city" @click="openCityList">
         <div class="stat">城市数量: {{ cityCnt }}</div>
         <div class="stat" v-if="freeCity > 0">空闲城市: {{ freeCity }}</div>
         <div class="stat" v-if="cityInBattle > 0">交战中的城市: {{ cityInBattle }}</div>
@@ -35,7 +35,9 @@ export const CityPanel = Vue.extend({
         });
     },
     methods: {
-
+        openCityList() {
+            extendUI.execCommand("changeSidebar", { link: "/cityList" });
+        }
     },
     components: {
 

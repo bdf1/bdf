@@ -3,6 +3,7 @@
  * @module ui.js 状态栏UI
  */
 
+import { MapBoard } from "./map/index.js";
 import { Sidebar } from "./sidebar/index.js";
 import { Topbar } from "./topbar/index.js";
 
@@ -35,6 +36,9 @@ export const extendUI = new class ExtendUI {
      * @param {() => any} action 
      */
     onUpdate(action) {
+		if (extendUI.store.serve) {
+            action();
+        }
         this._subscribers.push(action);
     }
 
@@ -58,6 +62,7 @@ export const extendUI = new class ExtendUI {
      * @param {any?} payload 
      */
     execCommand(name, payload) {
+        console.log(`execCommand[${ name }]`, payload);
         if (name in this._actions) {
             this._actions[name](payload);
         } else {
@@ -89,13 +94,13 @@ export const extendUI = new class ExtendUI {
         core.lockControl();
         if (name in this._modals) {
             const component = this._modals[name](payload);
-            const vm = new Vue(component);
             const container = document.createElement("div");
             this.rootContainer.appendChild(container);
+            const vm = new Vue(component).$mount(container);
             // @ts-ignore
             await vm.wait();
             vm.$destroy();
-            container.remove();
+            vm.$el.remove();
         } else {
             console.error(`${ name }操作未被注册过, payload: ${ payload }`);
         }
@@ -135,5 +140,7 @@ export const extendUI = new class ExtendUI {
 window.extendUI = extendUI;
 
 import { tutorial } from "./modal/tutorial/index.js";
-import { MapBoard } from "./map/index.js";
+import { research } from "./modal/research/index.js";
+
 extendUI.registerModal("tutorial", tutorial);
+extendUI.registerModal("research", research);

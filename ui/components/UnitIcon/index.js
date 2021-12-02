@@ -12,15 +12,21 @@ const IconRegistry = {
 
 export const UnitIcon = Vue.extend({
     template: /* HTML */`
-    <w-icon class="unit-icon" :icon="icon.icon" :style="backgroundColor: icon.color" />
+    <div class="unit-icon" :class="size">
+        <w-icon :icon="icon.icon" :style="{ backgroundColor: icon.color }" />
+        <div v-if="level >= 0" class="level">{{ level }}</div>
+        <div v-if="count >= 0" class="count">{{ count }}</div>
+    </div>
     `,
     props: {
-        unit: {},
-        level: Number,
+        unit: Number,
+        level: { type: Number, default: -1 },
+        count: { type: Number, default: -1 },
+        size: { type: String, default: "normal" }
     },
     computed: {
         icon() {
-            return IconRegistry[unit] || {};
+            return IconRegistry[this.unit] || {};
         }
     },
     components: {

@@ -3,7 +3,7 @@ import { PlayerIcon } from "../../components/PlayerIcon/index.js";
 export const WarPanel = Vue.extend({
     template: /* HTML */`
     <div class="sidebar-item war">
-        <div v-if="enemies.length > 0">
+        <div v-if="enemies.length > 0" class="war-list">
             <player-icon v-for="enemy of enemies" :key="enemy" :player="enemy" />
         </div>
         <div v-else class="empty">

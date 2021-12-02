@@ -1,12 +1,41 @@
-.unit-icon.normal {
-    width: 30rem;
-    height: 30rem;
-    border: 2rem #AAAAAA solid;
-    border-radius: 4rem;
-}
-.unit-icon.mini {
-    width: 15rem;
-    height: 15rem;
-    border: 1rem #AAAAAA solid;
-    border-radius: 2rem;
+.unit-icon {
+    position: relative;
+    user-select: none;
+    .icon {
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+    }
+    .level {     
+        position: absolute;
+        right: 2rem;
+        top: 0;
+        font-weight: bold;
+        text-shadow: 0 0 4rem black;
+        color: #EEEEEE;
+    }
+    &.large {
+        width: 45rem;
+        height: 45rem;
+        .icon {
+            border: 3rem #AAAAAA solid;
+            border-radius: 6rem;
+        }
+    }
+    &.normal {
+        width: 30rem;
+        height: 30rem;
+        .icon {
+            border: 2rem #AAAAAA solid;
+            border-radius: 4rem;
+        }
+    }
+    &.mini {
+        width: 15rem;
+        height: 15rem;
+        .icon {
+            border: 1rem #AAAAAA solid;
+            border-radius: 2rem;
+        }
+    }
 }
