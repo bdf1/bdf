@@ -41,7 +41,7 @@ export const ResearchPanel = Vue.extend({
     created() {
         extendUI.onUpdate(() => {
             if (!flags.xzgj) return;
-            const research = flags.gj[flags.xzgj].research;
+            const research = core.createResearch(flags.gj[flags.xzgj]);
             if (research.field === 0) {
                 return;
             }

@@ -74,49 +74,7 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 			"商店": "shop.mp3",
 			"领域": "zone"
 		},
-		"levelChoose": [
-			{
-				"title": "简单",
-				"name": "Easy",
-				"hard": 1,
-				"color": [
-					64,
-					255,
-					85,
-					1
-				],
-				"action": [
-					{
-						"type": "comment",
-						"text": "在这里写该难度需执行的事件"
-					}
-				]
-			},
-			{
-				"title": "普通",
-				"name": "Normal",
-				"hard": 2,
-				"color": [
-					255,
-					221,
-					32,
-					1
-				],
-				"action": []
-			},
-			{
-				"title": "困难",
-				"name": "Hard",
-				"hard": 3,
-				"color": [
-					255,
-					68,
-					64,
-					1
-				],
-				"action": []
-			}
-		],
+		"levelChoose": [],
 		"equipName": [
 			"武器",
 			"盾牌"

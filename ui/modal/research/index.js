@@ -2,7 +2,7 @@ import { UnitIcon } from "../../components/UnitIcon/index.js";
 import { ModalFrame } from "../Modal.js";
 
 export const research = function() {
-    const research = flags.gj[flags.xzgj].research;
+    const research = core.createResearch(flags.gj[flags.xzgj]);
     return Vue.extend({
         template: /* HTML */`
         <modal-frame name="research" title="研究" @close="close">
