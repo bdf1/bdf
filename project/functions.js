@@ -46,6 +46,7 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a =
 	core.resize();
 	if (main.mode == "play") {
 		extendUI.execCommand("serve");
+		extendUI.execCommand("sidebar/goto", { link: "" });
 	}
 	// 状态栏是否显示
 	if (core.hasFlag('hideStatusBar'))

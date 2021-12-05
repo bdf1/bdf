@@ -1209,7 +1209,15 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			],
 			[{},
 				{ nm: "核弹", zdl: 20000, hp: 1, sd: 5, xh: 1500 }
-			]
+			],
+			[],
+			[],
+			[{},
+				{ nm: "工厂", zdl: 0, hp: 0, sd: 0, xh: 100 }
+			],
+			[{},
+				{ nm: "研究所", zdl: 0, hp: 0, sd: 0, xh: 100 }
+			],
 		]
 		core.status.hero.flags.cs = cs;
 		core.status.hero.flags.gj = gj;
@@ -1928,6 +1936,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 								var xh = 0;
 								while (flags.gj[i].yffy[lx][xh + 1] <= 0 && xh < 5) xh += 1;
 								if (lx == 4 && xh > 3) xh = 3;
+								if (xh > 0) flags.cs[j].sc.push({ lx: lx, xh: xh, ys: flags.mil[lx][xh].xh });
 							}
 						}
 				}

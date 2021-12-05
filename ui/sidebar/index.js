@@ -6,7 +6,9 @@ import { MisslePanel } from "./panels/MisslePanel.js";
 import { NextButton } from "./panels/NextButton.js";
 import { ResearchPanel } from "./panels/ResearchPanel.js";
 import { WarPanel } from "./panels/WarPanel.js";
-
+import { CityList } from "./cityLayer/CityList.js";
+import { CityDetail } from "./cityLayer/CityDetail.js";
+import { createStore } from "../store/index.js";
 
 export const Sidebar = Vue.extend({
     template: /* HTML */`
@@ -19,25 +21,29 @@ export const Sidebar = Vue.extend({
             <battle-panel />
             <missle-panel />
             <next-button />
+            <component v-if="store.link" :is="store.link"></component>
         </div>
     </div>
     `,
-    data: () => ({
+    data: () => createStore("sidebar", {
         show: false,
         store: extendUI.store,
         lockControl: false,
         onSelection: false,
+    }, (data) => {
+        data.show = core.domStyle.showStatusBar;
+        data.lockControl = core.status.lockControl;
+        if (!flags.xzgj) {
+            data.onSelection = true;
+            return;
+        }
+        data.onSelection = false;
     }),
     created() {
-        extendUI.onUpdate(() => {
-            this.show = core.domStyle.showStatusBar;
-            this.lockControl = core.status.lockControl;
-            if (!flags.xzgj) {
-                this.onSelection = true;
-                return;
-            }
-            this.onSelection = false;
-        });
+        extendUI.registerCommand("sidebar/goto", ({ link, params }) => {
+            extendUI.store.link = link;
+            extendUI.store.params = params;
+        })
     },
     components: {
         SelectionLayer,
@@ -47,5 +53,8 @@ export const Sidebar = Vue.extend({
         BattlePanel,
         MisslePanel,
         NextButton,
+
+        CityList,
+        CityDetail
     }
 });

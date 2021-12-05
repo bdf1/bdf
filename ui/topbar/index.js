@@ -1,6 +1,7 @@
 import { extendUI } from "../index.js";
 import { WIcon } from "../components/Icon/index.js";
 import { PlayerIcon } from "../components/PlayerIcon/index.js";
+import { createStore } from "../store/index.js";
 
 export const Topbar = Vue.extend({
     template: /* HTML */`
@@ -50,7 +51,7 @@ export const Topbar = Vue.extend({
         </div>
     </div>
     `,
-    data: () => ({
+    data: () => createStore("topbar", {
         show: false,
         store: extendUI.store,
         lockControl: false,
@@ -65,37 +66,34 @@ export const Topbar = Vue.extend({
         RD: 0,
         totalIC: 0,
         totalRD: 0,
-    }),
-    created() {
-        extendUI.onUpdate(() => {
-            this.show = core.domStyle.showStatusBar;
-            this.lockControl = core.status.lockControl;
-            this.hard = core.status.hard;
-            if (!flags.xzgj) {
-                this.onSelection = true;
-                return;
+    }, (data) => {
+        data.show = core.domStyle.showStatusBar;
+        data.lockControl = core.status.lockControl;
+        data.hard = core.status.hard;
+        if (!flags.xzgj) {
+            data.onSelection = true;
+            return;
+        }
+
+        data.onSelection = false;
+
+        data.player = flags.xzgj;
+        data.playername = flags.gj[data.player].nm;
+        data.color = flags.color[data.player];
+        data.totalPlayers = 0;
+        flags.gj.forEach((e) => {
+            if (e.nm && e.sile === false) {
+                data.totalPlayers++;
             }
+        });
 
-            this.onSelection = false;
-
-            this.player = flags.xzgj;
-            this.playername = flags.gj[this.player].nm;
-            this.color = flags.color[this.player];
-            this.totalPlayers = 0;
-            flags.gj.forEach((e) => {
-                if (e.nm && e.sile === false) {
-                    this.totalPlayers++;
-                }
-            });
-
-            const hero = core.status.hero;
-            this.turn = hero.money;
-            this.IC = hero.atk;
-            this.RD = hero.def;
-            this.totalIC = hero.mdef;
-            this.totalRD = hero.exp;
-        })
-    },
+        const hero = core.status.hero;
+        data.turn = hero.money;
+        data.IC = hero.atk;
+        data.RD = hero.def;
+        data.totalIC = hero.mdef;
+        data.totalRD = hero.exp;
+    }),
     methods: {
         openHelp() {
             extendUI.callModal("tutorial");

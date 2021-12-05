@@ -4,7 +4,11 @@
     bottom: 0;
     left: 0;
     width: 640rem;
-    z-index: 130;
+    z-index: 180;
+    user-select: none;
+    &.lockControl {
+        z-index: 135;
+    }
 }
 .unit-card {
     position: absolute;
@@ -13,10 +17,29 @@
     border-radius: 4rem;
     border: 2rem solid #000000;
     box-shadow: 1rem 1rem 2rem rgba(0,0,0,0.35);
+    z-index: 2;
 
     .unit-counter {
         font-size: 12rem;
         text-align: center;
         font-weight: bold;
+    }
+
+    .selected {
+
+    }
+}
+.city-block {
+    position: absolute;
+    width: 32rem;
+    height: 32rem;
+    z-index: 1;
+    .locked {
+        z-index: 3;
+        background-color: rbga(0, 0, 0, 0.35);
+    }
+
+    .selected {
+        
     }
 }

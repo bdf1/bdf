@@ -13,6 +13,8 @@ export const extendUI = new class ExtendUI {
     rootContainer;
     store = {
         serve: false,
+        link: "",
+        params: undefined,
     };
 
     constructor() {

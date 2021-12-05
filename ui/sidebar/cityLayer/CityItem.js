@@ -1,5 +1,6 @@
 import { WIcon } from "../../components/Icon/index.js";
 import { UnitIcon } from "../../components/UnitIcon/index.js";
+import { extendUI } from "../../index.js";
 
 
 const CityMarks = {};
@@ -18,7 +19,7 @@ const CityMarks = {};
 
 export const CityItem = Vue.extend({
     template: /* HTML */`
-    <div class="city-item">
+    <div class="city-item" @click="gotoDetail">
         <div class="base-info">
             <div class="city-mark">
                 <img :src="cityMark" />
@@ -30,15 +31,19 @@ export const CityItem = Vue.extend({
             <div class="data"><w-icon icon="physics-xs"/>{{ research }}</div>
             <div class="data"><w-icon icon="staff"/>{{ population }}+{{ populationIncrease }}</div>
         </div>
-        <div class="construction">
-            <unit-icon :unit="1" :level="1" />
+        <div class="construction" v-if="head">
+            <unit-icon :unit="head.type" :level="head.level" />
             <div class="process-label">
-                <div class="value">{{ hp }}/{{ hpmax }}</div>
+                <unit-icon v-if= next :unit="next.type" :level="next.level"></unit-icon>
+                <div class="value">{{ head.pass }}/{{ head.total }}</div>
             </div>
             <div class="process-bar">
-                <div class="pass" :style="barStyle"></div>
+                <div class="pass" :style="headBarStyle"></div>
             </div>
-        </div> 
+        </div>
+        <div v-else class="empty">
+            <w-icon class="blink warning" icon="warning" />空闲中
+        </div>
     </div>
     `,
     props: {
@@ -62,6 +67,14 @@ export const CityItem = Vue.extend({
             }
             return `width: ${ ratio.toFixed(3) }%;`;
         },
+        headBarStyle() {
+            if (!this.head) return "";
+            let ratio = 0;
+            if (this.head.total > 0) {
+                ratio = this.head.pass / this.head.total * 100;
+            }
+            return `width: ${ ratio.toFixed(3) }%;`;
+        },
         cityLevel() {
             if (this.hpmax === 30000) return 4;
             if (this.hpmax === 20000) return 3;
@@ -71,6 +84,31 @@ export const CityItem = Vue.extend({
         cityMark() {
             return CityMarks[this.cityLevel];
         },
+        head() {
+            if (this.constructionQueue.length === 0) return null;
+            return this.getConstructionInfo(this.constructionQueue[0]);
+        },
+        next() {
+            if (this.constructionQueue.length < 2) return null;
+            return this.getConstructionInfo(this.constructionQueue[1]);
+        },
+    },
+    methods: {
+        getConstructionInfo({ lx, xh, ys }) {
+            const proto = flags.mil[lx][xh];
+            const total = proto.xh;
+            const _pass = ys;
+            const pass = Math.min(proto.xh, ys);
+            const overflow = Math.max(0, _pass - total);
+            return {
+                type: lx, level: xh, total, pass, overflow
+            };
+        },
+        gotoDetail() {
+            extendUI.execCommand("sidebar/goto", { link: "cityDetail", params: {
+                id: this.city.id,
+            } });
+        }
     },
     components: {
         UnitIcon,
