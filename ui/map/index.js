@@ -19,7 +19,7 @@ export const MapBoard = Vue.extend({
         data.lockControl = core.status.lockControl;
         if (!Array.isArray(flags.cs)) return;
         // 对于选中军队的情况，要锁定无法移动到的地块，并添加浮层
-        if (extendUI.store.link = "unitDetail") {
+        if (extendUI.store.link = "UnitDetail") {
 
         }
         // 渲染城市

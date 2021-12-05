@@ -13,7 +13,7 @@ export const CityPanel = Vue.extend({
         cityCnt: 0,
         freeCity: 0,
         cityInBattle: 0,
-    }, () => {
+    }, (data) => {
         if (!flags.xzgj) return;
         let cityCnt = 0;
         let freeCity = 0;

@@ -1,5 +1,6 @@
 import { extendUI } from "../../index.js";
 import { PlayerIcon } from "../../components/PlayerIcon/index.js";
+import { createStore } from "../../store/index.js";
 
 export const SelectionLayer = Vue.extend({
     template: /* HTML */`
@@ -23,17 +24,16 @@ export const SelectionLayer = Vue.extend({
         </div>
     </div>
     `,
-    data: () => ({
+    data: () => createStore("selection", {
         selection: "",
         playername: "",
+    }, (data) => {
+        data.selection = flags.selection || "";
+        if (data.selection) {
+            data.playername = flags.gj[data.selection].nm;
+        }
     }),
     created() {
-        extendUI.onUpdate(() => {
-            this.selection = flags.selection || "";
-            if (this.selection) {
-                this.playername = flags.gj[this.selection].nm;
-            }
-        });
     },
     methods: {
         startGame() {

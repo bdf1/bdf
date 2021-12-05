@@ -1,4 +1,5 @@
 import { PlayerIcon } from "../../components/PlayerIcon/index.js";
+import { createStore } from "../../store/index.js";
 
 export const WarPanel = Vue.extend({
     template: /* HTML */`
@@ -11,20 +12,19 @@ export const WarPanel = Vue.extend({
         </div>
     </div>
     `,
-    data: () => ({
+    data: () => createStore("war-panel", {
         enemies: [],
+    }, (data) => {
+        if (!flags.xzgj) return;
+        const enemies = [];
+        for (let i = 1; i < flags.gj.length; i++) {
+            if (flags.zz[flags.xzgj][i]) {
+                enemies.push(i);
+            }
+        }
+        data.enemies = enemies;
     }),
     created() {
-        extendUI.onUpdate(() => {
-            if (!flags.xzgj) return;
-            const enemies = [];
-            for (let i = 1; i < flags.gj.length; i++) {
-                if (flags.zz[flags.xzgj][i]) {
-                    enemies.push(i);
-                }
-            }
-            this.enemies = enemies;
-        });
     },
     methods: {
         

@@ -243,11 +243,23 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		return false;
 	}, 100);
 
+	core.registerAction('onmove', 'enemyInfoDisplay', function (mouse_x, mouse_y) {
+		core.plugin.enemyInfoDisplay(mouse_x, mouse_y);
+		return false;
+	}, 100);
+
+	if (main.mode === 'play') {
+		// 鼠标移出时清除悬浮窗
+		core.dom.data.onmouseout = function() {
+			core.clearMap("enemyInfo");
+		}
+	}
+
 	//主程序，当鼠标移动时进行判断
 	this.enemyInfoDisplay = function (mouse_x, mouse_y) {
 		//使用需要3个条件：打开开关、拥有怪物手册和玩家在电脑端上游戏
 		if (core.getFlag("useEnemyInfoDisplay") == true && core.platform.isPC == true && !core.status.lockControl) {
-			core.createCanvas("enemyInfo", 0, 0, 1000, 700, 90);
+			core.createCanvas("enemyInfo", 0, 0, 1000, 700, 140);
 			//这里处理大地图带来的影响
 			offsetX = core.bigmap.offsetX;
 			offsetY = core.bigmap.offsetY;
@@ -1462,7 +1474,12 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 			flags.selection = city.gj;
 			extendUI.update();
 		} else {
-
+			extendUI.execCommand("sidebar/goto", {
+				link: "CityDetail",
+				params: {
+					id: cityId,
+				}
+			});
 		}
 	}
 	core.control._setAutomaticRoute_drawRoute = function (moveStep) {
@@ -1476,7 +1493,7 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		var pos = {'x': parseInt((px + core.bigmap.offsetX) / 32), 'y': parseInt((py + core.bigmap.offsetY) / 32)};
 		core.status.stepPostfix = [];
 		core.status.stepPostfix.push(pos);
-		core.fillRect('ui', pos.x*32+12-core.bigmap.offsetX,pos.y*32+12-core.bigmap.offsetY,8,8, '#bfbfbf');
+		// core.fillRect('ui', pos.x*32+12-core.bigmap.offsetX,pos.y*32+12-core.bigmap.offsetY,8,8, '#bfbfbf');
 	
 		clearTimeout(core.timeout.onDownTimeout);
 		core.timeout.onDownTimeout = null;

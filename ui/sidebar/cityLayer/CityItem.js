@@ -1,34 +1,21 @@
 import { WIcon } from "../../components/Icon/index.js";
 import { UnitIcon } from "../../components/UnitIcon/index.js";
 import { extendUI } from "../../index.js";
+import { CityMark } from "./CityMark.js";
 
 
 const CityMarks = {};
-// core.clearMap(ctx1);
-// core.fillCircle(ctx1, 16, 16, 6, "#000")
-// core.strokeCircle(ctx1, 16, 16, 9, "#000", 1);
-// core.strokeCircle(ctx1, 16, 16, 13, "#000", 1);
-// core.clearMap(ctx2);
-// core.strokeCircle(ctx2, 16, 16, 5, "#000", 1);
-// core.strokeCircle(ctx2, 16, 16, 9, "#000", 1);
-// core.clearMap(ctx3);
-// core.fillCircle(ctx3, 16, 16, 4, "#000", 1);
-// core.strokeCircle(ctx3, 16, 16, 8, "#000", 1);
-// core.clearMap(ctx4);
-// core.strokeCircle(ctx4, 16, 16, 6, "#000", 1);
 
 export const CityItem = Vue.extend({
     template: /* HTML */`
     <div class="city-item" @click="gotoDetail">
         <div class="base-info">
-            <div class="city-mark">
-                <img :src="cityMark" />
-            </div>
+            <city-mark :level="cityLevel"/>
             <div class="name">{{ name }}</div>
         </div>
         <div class="stat">
-            <div class="data"><w-icon icon="factory-xs"/>{{ ic }}</div>
-            <div class="data"><w-icon icon="physics-xs"/>{{ research }}</div>
+            <div class="data"><w-icon icon="factory-xs"/>{{ IC }}</div>
+            <div class="data"><w-icon icon="physics-xs"/>{{ RD }}</div>
             <div class="data"><w-icon icon="staff"/>{{ population }}+{{ populationIncrease }}</div>
         </div>
         <div class="construction" v-if="head">
@@ -51,8 +38,8 @@ export const CityItem = Vue.extend({
         name: String,
         hpmax: Number,
         hp: Number,
-        ic: Number,
-        research: Number,
+        IC: Number,
+        RD: Number,
         army: Array,
         enemy: Array,
         population: Number,
@@ -81,9 +68,6 @@ export const CityItem = Vue.extend({
             if (this.hpmax === 10000) return 2;
             if (this.hpmax === 5000 ) return 1;
         },
-        cityMark() {
-            return CityMarks[this.cityLevel];
-        },
         head() {
             if (this.constructionQueue.length === 0) return null;
             return this.getConstructionInfo(this.constructionQueue[0]);
@@ -105,13 +89,14 @@ export const CityItem = Vue.extend({
             };
         },
         gotoDetail() {
-            extendUI.execCommand("sidebar/goto", { link: "cityDetail", params: {
-                id: this.city.id,
+            extendUI.execCommand("sidebar/goto", { link: "CityDetail", params: {
+                id: this.id,
             } });
         }
     },
     components: {
         UnitIcon,
         WIcon,
+        CityMark,
     }
 });

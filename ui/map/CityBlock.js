@@ -2,10 +2,13 @@ import { extendUI } from "../index.js"
 
 export const CityBlock = Vue.extend({
     template: /* HTML */`
-    <div class="city-block" :style="cityStyle" @click="onClick">
+    <div class="city-block" :class="{ selected }" :style="cityStyle" @click="onClick">
         
     </div>
     `,
+    data: () => ({
+        store: extendUI.store
+    }),
     props: {
         city: Object,
     },
@@ -16,6 +19,12 @@ export const CityBlock = Vue.extend({
             style.top = y * 32 + 'rem';
             return style;
         },
+        selected() {
+            if (this.store.link === "CityDetail"
+                && this.store.params.id === this.city.id
+            ) return true;
+            return false;
+        }
     },
     methods: {
         onClick() {

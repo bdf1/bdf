@@ -1,6 +1,7 @@
 import { extendUI } from "../../index.js";
 import { WIcon } from "../../components/Icon/index.js";
 import { UnitIcon } from "../../components/UnitIcon/index.js";
+import { createStore } from "../../store/index.js";
 
 export const ResearchPanel = Vue.extend({
     template: /* HTML */`
@@ -22,12 +23,24 @@ export const ResearchPanel = Vue.extend({
         </div>
     </div>
     `,
-    data: () => ({
+    data: () => createStore("research-panel", {
         name: "",
         field: 0,
         level: 0,
         pass: 0,
         total: 0,
+    }, (data) => {
+        if (!flags.xzgj) return;
+        const research = core.createResearch(flags.gj[flags.xzgj]);
+        if (research.field === 0) {
+            return;
+        }
+        data.field = research.field;
+        const field = research.fields[data.field];
+        data.pass = field.pass;
+        data.level = field.level;
+        data.total = field.levels[data.level+1];
+        data.name = flags.mil[data.field][data.level+1].nm;
     }),
     computed: {
         barStyle() {
@@ -39,19 +52,6 @@ export const ResearchPanel = Vue.extend({
         }
     },
     created() {
-        extendUI.onUpdate(() => {
-            if (!flags.xzgj) return;
-            const research = core.createResearch(flags.gj[flags.xzgj]);
-            if (research.field === 0) {
-                return;
-            }
-            this.field = research.field;
-            const field = research.fields[this.field];
-            this.pass = field.pass;
-            this.level = field.level;
-            this.total = field.levels[this.level+1];
-            this.name = flags.mil[this.field][this.level+1].nm;
-        })
     },
     methods: {
         openResearchModal() {
