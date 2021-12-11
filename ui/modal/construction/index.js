@@ -1,11 +1,10 @@
 import { UnitIcon } from "../../components/UnitIcon/index.js";
 import { ModalFrame } from "../Modal.js";
 
-export const research = function() {
-    const research = core.createResearch(flags.gj[flags.xzgj]);
+export const construction = function({ id: cityId }) {
     return Vue.extend({
         template: /* HTML */`
-        <modal-frame name="research" title="研究" @close="close">
+        <modal-frame name="construction" title="生产" @close="close">
             <div v-if="field" class="process">
                 <unit-icon :unit="field" :level="fieldInfo.level+1"/>
                 <div class="info">
@@ -57,71 +56,15 @@ export const research = function() {
         </modal-frame>
         `,
         data: () => ({
-            field: research.field,
-            selection: research.field,
-            viewIndex: 0,
-            fields: [],
         }),
         computed: {
-            fieldInfo() {
-                if (this.field === 0) return null;
-                const info = research.fields[this.field];
-                return { ...info, unit: flags.mil[this.field][info.level+1] };
-            },
-            processInfo() {
-                if (!this.fieldInfo) return null;
-                const pass = this.fieldInfo.pass;
-                const total = this.fieldInfo.levels[this.fieldInfo.level+1];
-                const estimate = Math.ceil((total - pass) / core.status.hero.def); 
-                let ratio = 0;
-                if (total > 0) {
-                    ratio = pass / total * 100;
-                }
-                const barStyle = `width: ${ ratio.toFixed(3) }%;`;
-                return { pass, total, estimate, barStyle };
-            },
-            selectedFiled() {
-                if (this.selection === 0) return null;
-                return research.fields[this.selection];
-            },
-            selectionInfo() {
-                if (this.selection === 0) return [];
-                return flags.mil[this.selection].map((e, i) => {
-                    const needRD = this.selectedFiled.levels[i];
-                    const locked = (i > this.selectedFiled.level);
-                    return { ...e, needRD, locked };
-                }).slice(1);
-            },
-            viewedUnit() {
-                if (this.selection === 0) return null;
-                return this.selectionInfo[this.viewIndex];
-            },
-            selectable() {
-                if (this.selection === 0) return false;
-                return this.selectedFiled.level < this.selectedFiled.levels.length - 1;
-            }
         },
         created() {
             this.closePromise = new Promise((res) => {
                 this.closeHandler = res; 
             });
-            this.fields = Object.entries(research.fields)
-                .map(([ code, status ]) => {
-                    return { code: Number(code), level: status.level };
-                });
         },
         methods: {
-            view(field) {
-                if (this.selection === field) return;
-                this.selection = field;
-                this.viewIndex = 0;
-            },
-            viewUnit(index) {
-                this.viewIndex = index;
-            },
-            select() {
-                this.field = this.selection;
-            },
             wait() {
                 return this.closePromise;
             },

@@ -1,0 +1,114 @@
+.modal.research {
+    position: absolute;
+    top: 50rem;
+    bottom: 50rem;
+    left: 80rem;
+    right: 80rem;
+
+    box-shadow: 0 2rem 3rem 3rem rgba(0, 0, 0, 0.5);
+    background-color: #01579B;
+    color: #EEEEEE;
+
+    .body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .process, .empty-process {
+        height: 60rem;
+        margin-bottom: 10rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .empty-process {
+        font-size: 16rem;
+        text-align: center;
+    }
+
+    .process {
+        display: flex;
+        justify-content: center;
+        .info {
+            display: flex;
+            flex-direction: column;
+            width: 300rem;
+            margin-left: 10rem;
+        }
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            margin: 0 5rem;
+            align-items: center;
+        }
+        .value {
+            font-size: 12rem;
+            font-family: 'Consolas', monospace;
+        }
+        .process-bar {
+            background-color: #AAAAAA;
+            height: 3rem;
+            .pass {
+                background-color: #64B5F6;
+                height: 3rem;
+            }
+        }
+    }
+
+    .fields {
+        display: flex;
+        justify-content: space-around;
+        margin: 5rem 10rem;
+        .unit-icon {
+            cursor: pointer;
+            &.viewed img {
+                border-color: #EEEEEE;
+            }
+        }
+    }
+
+    .detail {
+        flex-grow: 1;
+        margin: 5rem 60rem;
+        display: flex;
+        .list {
+            width: 200rem;
+        }
+        .item {
+            margin: 5rem;
+            padding: 2rem 5rem;
+            font-size: 16rem;
+            cursor: pointer;
+            &.locked {
+                color: #AAAAAA;
+            }
+            &.selected {
+                background-color: #1976D2;
+            }
+        }
+        .right {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 30rem;
+            .intro {
+
+            }
+            .select-button {
+                background-color: #42A5F5;
+                padding: 5rem;
+                width: 100rem;
+                text-align: center;
+                margin-top: auto;
+                margin-left: auto;
+                margin-bottom: 5rem;
+                cursor: pointer;
+                &.disable {
+                    background-color: #444444;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+}

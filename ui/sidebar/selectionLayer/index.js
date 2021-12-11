@@ -9,7 +9,7 @@ export const SelectionLayer = Vue.extend({
         <div class="sidebar-item">
             <div v-if="selection">
                 <div class="base-info">
-                    <player-icon :player="selection" />
+                    <player-icon :player="selection" :clickable="false" />
                     <div>{{ playername }}</div>
                 </div>
                 <div class="stat">

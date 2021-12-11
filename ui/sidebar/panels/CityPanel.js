@@ -36,7 +36,7 @@ export const CityPanel = Vue.extend({
     },
     methods: {
         openCityList() {
-            extendUI.execCommand("sidebar/goto", { link: "cityList" });
+            extendUI.execCommand("sidebar/goto", { link: "CityList" });
         }
     },
     components: {

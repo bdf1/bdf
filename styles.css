@@ -175,8 +175,8 @@
 }
 
 #floorMsgGroup {
-    top: 3px;
-    right: 3px;
+    top: 0;
+    right: 0;
     position: absolute;
     text-align: center;
     display: none;

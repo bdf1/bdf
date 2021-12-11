@@ -2,6 +2,7 @@ import { extendUI } from "../index.js";
 import { WIcon } from "../components/Icon/index.js";
 import { PlayerIcon } from "../components/PlayerIcon/index.js";
 import { createStore } from "../store/index.js";
+import { NativeIcon } from "../components/NativeIcon/index.js";
 
 export const Topbar = Vue.extend({
     template: /* HTML */`
@@ -43,10 +44,21 @@ export const Topbar = Vue.extend({
                 <div class="hard-label" :class="'hard-'+hard">{{ hard }}</div>
             </div>
             <div class="topbar-item">
-                <w-icon class="button" icon="help" @click.native="openHelp" />
-                <w-icon class="button" icon="save" @click.native="openSave" />
-                <w-icon class="button" icon="opened-folder" @click.native="openLoad" />
-                <w-icon class="button" icon="settings" @click.native="openSettings" />
+                <template v-if="isReplaying">
+                    <native-icon v-if="isPlaying" class="button" icon="stop" @click.native="stopReplay"/>
+                    <native-icon v-else class="button" icon="play" @click.native="startReplay"/>
+                    <native-icon class="button" icon="step" @click.native="stepReplay"/>
+                    <native-icon class="button" icon="rewind" @click.native="rewindReplay"/>
+                    <native-icon class="button" icon="speedUp" @click.native="speedUpReplay"/>
+                    <native-icon class="button" icon="speedDown" @click.native="speedDownReplay" />
+                    <w-icon class="button" icon="save" @click.native="replaySave" />
+                </template>
+                <template v-else>
+                    <w-icon class="button" icon="help" @click.native="openHelp" />
+                    <w-icon class="button" icon="save" @click.native="openSave" />
+                    <w-icon class="button" icon="opened-folder" @click.native="openLoad" />
+                    <w-icon class="button" icon="settings" @click.native="openSettings" />
+                </template>
             </div>
         </div>
     </div>
@@ -66,10 +78,12 @@ export const Topbar = Vue.extend({
         RD: 0,
         totalIC: 0,
         totalRD: 0,
+        isReplaying: false,
     }, (data) => {
         data.show = core.domStyle.showStatusBar;
         data.lockControl = core.status.lockControl;
         data.hard = core.status.hard;
+        data.isReplaying = core.isReplaying();
         if (!flags.xzgj) {
             data.onSelection = true;
             return;
@@ -110,6 +124,7 @@ export const Topbar = Vue.extend({
     },
     components: {
         WIcon,
+        NativeIcon,
         PlayerIcon,
     }
 });

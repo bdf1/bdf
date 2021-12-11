@@ -1,4 +1,4 @@
-export const WIcon = Vue.extend({
+export const NativeIcon = Vue.extend({
     template: /* HTML */`
     <img class="icon" :src="src"/>
     `,
@@ -7,7 +7,7 @@ export const WIcon = Vue.extend({
     },
     computed: {
         src() {
-            return core.material.images.images[`icons8-${ this.icon }.png`].src;
+            return core.statusBar.icons[this.icon].src;
         }
     }
 });

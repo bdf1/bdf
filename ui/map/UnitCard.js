@@ -1,6 +1,6 @@
 export const UnitCard = Vue.extend({
     template: /* HTML */`
-    <div class="unit-card" :style="unitStyle" @click="onClick">
+    <div class="unit-card" :style="unitStyle">
         <div class="unit-counter">{{ unit.count }}</div>
     </div>
     `,
@@ -8,11 +8,11 @@ export const UnitCard = Vue.extend({
         unit: Object,
     },
     methods: {
-        onClick() {
-            extendUI.execCommand("sidebar/goto", { link: "UnitDetail", params: {
-                id: this.unit.id,
-            } });
-        }
+        // onClick() {
+        //     extendUI.execCommand("sidebar/goto", { link: "UnitDetail", params: {
+        //         id: this.unit.id,
+        //     } });
+        // }
     },
     computed: {
         unitStyle() {

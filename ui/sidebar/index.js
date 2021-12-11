@@ -9,6 +9,7 @@ import { WarPanel } from "./panels/WarPanel.js";
 import { CityList } from "./cityLayer/CityList.js";
 import { CityDetail } from "./cityLayer/CityDetail.js";
 import { createStore } from "../store/index.js";
+import { NativeIcon } from "../components/NativeIcon/index.js";
 
 export const Sidebar = Vue.extend({
     template: /* HTML */`
@@ -43,6 +44,7 @@ export const Sidebar = Vue.extend({
         extendUI.registerCommand("sidebar/goto", ({ link, params }) => {
             extendUI.store.link = link;
             extendUI.store.params = params;
+            extendUI.update();
         })
     },
     components: {

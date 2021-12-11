@@ -143,6 +143,8 @@ window.extendUI = extendUI;
 
 import { tutorial } from "./modal/tutorial/index.js";
 import { research } from "./modal/research/index.js";
+import { construction } from "./modal/construction/index.js";
 
 extendUI.registerModal("tutorial", tutorial);
 extendUI.registerModal("research", research);
+extendUI.registerModal("construction", construction);

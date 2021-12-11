@@ -28,7 +28,7 @@ export const CityItem = Vue.extend({
                 <div class="pass" :style="headBarStyle"></div>
             </div>
         </div>
-        <div v-else class="empty">
+        <div v-else class="empty" @click="openConstruction">
             <w-icon class="blink warning" icon="warning" />空闲中
         </div>
     </div>
@@ -92,6 +92,11 @@ export const CityItem = Vue.extend({
             extendUI.execCommand("sidebar/goto", { link: "CityDetail", params: {
                 id: this.id,
             } });
+        },
+        openConstruction() {
+            extendUI.callModal("construction", {
+                id: this.id
+            });
         }
     },
     components: {

@@ -59,6 +59,61 @@
     }
 }
 
+.city-detail {
+    background-color: #666666;
+    .city-mark {
+        width: 18rem;
+        height: 18rem;
+    }
+    .base-info {
+        margin-top: 5rem;
+    }
+    .base-info, .stat {
+        padding: 0 5rem;
+        font-family: 'Consolas', monospace;
+        color: #EEEEEE;
+        display: flex;
+    }
+    .stat {
+        .data {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            min-width: 40rem;
+            margin-right: 5rem;
+        }
+        .icon {
+            width: 16rem;
+            height: 16rem;
+            margin-right: 5rem;
+        }
+    }
+    .warning {
+        width: 20rem;
+        height: 20rem;
+    }
+    .empty {
+        flex-grow: 1;
+
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+
+        color: #EEEEEE;
+    }
+    .owner {
+        padding: 5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #EEEEEE;
+        .player-icon {
+            margin-left: 5rem;
+        }
+    }
+}
+
 .sidebar-layer.city-detail {
     background-color: #555555;
 }

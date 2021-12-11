@@ -1468,18 +1468,25 @@ var plugins_bb40132b_638b_4a9f_b028_d3fe47acc8d1 =
 		
 	core.control.setAutomaticRoute = function (destX, destY, stepPostfix) {
 		var cityId = flags.tu[destY-1][destX];
-		if (cityId === 0) return;
-		var city = flags.cs[cityId];
 		if (!flags.xzgj) {
+			if (cityId === 0) return;
+			var city = flags.cs[cityId];
 			flags.selection = city.gj;
 			extendUI.update();
 		} else {
-			extendUI.execCommand("sidebar/goto", {
-				link: "CityDetail",
-				params: {
-					id: cityId,
-				}
-			});
+			console.log(cityId);
+			if (cityId === 0) {
+				extendUI.execCommand("sidebar/goto", {
+					link: ""
+				});
+			} else {
+				extendUI.execCommand("sidebar/goto", {
+					link: "CityDetail",
+					params: {
+						id: cityId,
+					}
+				});
+			}
 		}
 	}
 	core.control._setAutomaticRoute_drawRoute = function (moveStep) {
