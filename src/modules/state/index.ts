@@ -6,6 +6,7 @@ export namespace SSOT {
     type HistoryData = HistoryRecord[];
 
     export type StoreAction<P extends any[], R> = (...args: P) => Promise<R>;
+    export type StoreQuery<P extends any[], R> = (...args: P) => Promise<R>;
 
     export interface StoreHistory {
         dump(): HistoryData;
@@ -22,6 +23,7 @@ export namespace SSOT {
         /** store 的当前状态 */
         readonly state: S;
         registerAction<P extends any[], R>(name: string, action: (state: S, ...args: P) => R): StoreAction<P, R>;
+        registerQuery<P extends any[], R>(name: string, query: (state: S, ...args: P) => R): StoreQuery<P, R>;
     }
 
     interface GlobalState {
@@ -31,6 +33,7 @@ export namespace SSOT {
 
     const storeRegistry = new Map<string, StoreHandler>;
     const actionRegistry = new Map<string, StoreAction<any[], any>>();
+    const queryRegistry = new Map<string, StoreQuery<any[], any>>();
 
     let historyData: HistoryData = [];
     
@@ -64,7 +67,7 @@ export namespace SSOT {
         historyData = state.history;
     };
 
-    const reset = () => {
+    export const reset = () => {
         storeRegistry.forEach((handler) => {
             handler.init();
         })
@@ -74,6 +77,8 @@ export namespace SSOT {
     const dumpHistory = () => {
         return historyData;
     };
+
+    let isReplaying = false;
 
     const applyHistory = async (historyData: HistoryData) => {
         for (const [ name, args ] of historyData) {
@@ -120,12 +125,42 @@ export namespace SSOT {
             actionRegistry.set(wholeName, wrappedAction);
             return wrappedAction;
         };
+
+        const registerQuery = <P extends any[], R>(queryName: string, query: (state: S, ...args: P) => R): StoreQuery<P, R> => {
+            const wholeName = storeName + '/' + queryName;
+            if (queryRegistry.has(queryName)) {
+                console.error(`[store] 询问"${ wholeName }"已经被注册`);
+            }
+            const wrappedQuery = async (...args: P) => {
+                if (isReplaying) {
+                    const record = historyData.pop();
+                    if (!record) {
+                        console.error(`[store/replay] 重放失败，尝试读取"${ wholeName }"，但是已经没有剩余操作`);
+                        return;
+                    }
+                    const [queryName, result] = record;
+                    if (queryName !== wholeName) {
+                        console.error(`[store/replay] 重放失败，尝试读取"${ wholeName }"，实际读取到"${ queryName }"`);
+                    }
+                    return result;
+                } else {
+                    const result = query(state, ...args);
+                    const record: QueryRecord = [ wholeName, clone(result) ];
+                    historyData.push(record);
+                    return result;
+                }
+            };
+            // @ts-ignore
+            queryRegistry.set(wholeName, wrappedQuery);
+            return wrappedQuery;
+        };
     
         return {
             get state() {
                 return state;
             },
             registerAction,
+            registerQuery,
         }
     }
 }
