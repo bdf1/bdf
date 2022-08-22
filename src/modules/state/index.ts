@@ -1,49 +1,39 @@
-import { EventHook } from "@/utils/eventHook";
+export namespace SSOT {
 
-interface StoreAction<P extends any[], R> {
-    (...args: P): Promise<[R, Promise<any>]>;
-    beforeExec(hook: (args: P) => any): void;
-    afterExec(hook: (args: P, r: R) => any): void;
-}
+    type ActionRecord = [ action: string, params: any[] ];
+    type QueryRecord = [ query: string, result: any ];
+    type HistoryRecord = (ActionRecord | QueryRecord);
+    type HistoryData = HistoryRecord[];
 
-interface SubstoreInstance<S extends Object> {
-    state: S;
-    registerAction<P extends any[], R>(action: (...args: P) => R): StoreAction<P, R>;
-}
+    export type StoreAction<P extends any[], R> = (...args: P) => Promise<R>;
 
-type QueryRecord = [ query: string, result: any ];
-type ActionRecord = [ action: string, params: any[], queries: QueryRecord[] ];
-type HistoryData = ActionRecord[];
+    export interface StoreHistory {
+        dump(): HistoryData;
+        apply(data: HistoryData): Promise<void>;
+    }
 
-interface StoreHistory {
-    dump(): HistoryData;
-    apply(data: HistoryData): Promise<void>;
-}
-
-interface StoreInstance<P extends any[], S extends Object> {
-    /** 获取 store 的当前状态，初始化完成前调用会抛出异常 */
-    useState(): S;
-    dump(): [S, HistoryData];
-    load(data: [S, HistoryData]): void;
-    init: (...args: P) => void;
-    registerAction<P extends any[], R>(name: string, action: (state: S, ...args: P) => R): StoreAction<P, R>;
-    history: StoreHistory;
-    // registerSubstore(): SubstoreInstance<S>;
-}
-
-export function defineStore<P extends any[], S extends Object>(initializer: (...args: P) => S): StoreInstance<P, S> {
+    interface StoreHandler {
+        getState(): any;
+        setState(state: any): void;
+        init(): void;
+    }
     
-    let state: S;
-    let currentAction: ActionRecord | undefined;
-    let historyData: HistoryData;
+    export interface StoreInstance<S extends Object> {
+        /** store 的当前状态 */
+        readonly state: S;
+        registerAction<P extends any[], R>(name: string, action: (state: S, ...args: P) => R): StoreAction<P, R>;
+    }
 
-    const useState = () => {
-        if (!state) {
-            throw Error("[state] 状态尚未初始化");
-        }
-        return state;
-    };
+    interface GlobalState {
+        stores: Record<string, any>;
+        history: HistoryData,
+    }
 
+    const storeRegistry = new Map<string, StoreHandler>;
+    const actionRegistry = new Map<string, StoreAction<any[], any>>();
+
+    let historyData: HistoryData = [];
+    
     /**
      * 克隆数据，注意到状态必须是可序列化的，因此使用 JSON 方式最为简单 
      * @param data 
@@ -53,47 +43,36 @@ export function defineStore<P extends any[], S extends Object>(initializer: (...
         return JSON.parse(JSON.stringify(data));
     }
 
-    const dump = (): [S, HistoryData] => {
-        return clone([ state, historyData ]);
-    }
+    export const dump = (): GlobalState => {
 
-    const load = ([ _state, _historyData ]: [ S, HistoryData ]) => {
-        state = _state;
-        historyData = _historyData;
+        const storesData = Object.fromEntries(
+            [ ...storeRegistry.entries() ].map(([ name, handler ]) => {
+                return [ name, handler.getState() ];
+            })
+        );
+
+        return {
+            stores: storesData,
+            history: historyData,
+        };
+    };
+    
+    export const load = (state: GlobalState) => {
+        storeRegistry.forEach((handler, name) => {
+            handler.setState(state.stores[name]);
+        });
+        historyData = state.history;
     };
 
-    const init = (...args: P) => {
-        state = initializer(...args);
+    const reset = () => {
+        storeRegistry.forEach((handler) => {
+            handler.init();
+        })
         historyData = [];
     };
-
-    const actionRegistry = new Map<string, StoreAction<any[], any>>();
-
-    const registerAction = <P extends any[], R>(name: string, action: (state: S, ...args: P) => R): StoreAction<P, R> => {
-        if (actionRegistry.has(name)) {
-            throw Error(`[replay] 操作"${ name }"已经被注册`);
-        }
-        const beforeHook = new EventHook<[P]>();
-        const afterHook = new EventHook<[P, R]>();
-        const wrappedAction = async (...args: P): Promise<[R, Promise<any>]> => {
-            await Promise.all(beforeHook.call(args));
-            const record: ActionRecord = [ name, clone(args), [] ];
-            currentAction = record;
-            historyData.push(record);
-            const result = action(state, ...args);
-            currentAction = void 0;
-            const finish = Promise.all(afterHook.call(args, result));
-            return [ result, finish ];
-        };
-        wrappedAction.beforeExec = beforeHook.tap.bind(beforeHook);
-        wrappedAction.afterExec = afterHook.tap.bind(afterHook);
-        // @ts-ignore
-        actionRegistry.set(name, wrappedAction);
-        return wrappedAction;
-    };
-
-    const dumpHistroy = () => {
-        return clone(historyData);
+    
+    const dumpHistory = () => {
+        return historyData;
     };
 
     const applyHistory = async (historyData: HistoryData) => {
@@ -106,17 +85,47 @@ export function defineStore<P extends any[], S extends Object>(initializer: (...
         }
     };
 
-    const history = {
-        dump: dumpHistroy,
-        apply: applyHistory,
-    }
+    export const history = {
+        dump: dumpHistory,
+        applyHistory: applyHistory,
+    };
 
-    return {
-        useState,
-        dump,
-        load,
-        init,
-        registerAction,
-        history,
+    export function registerStore<S extends Object>(storeName: string, initializer: () => S): StoreInstance<S> {
+    
+        if (storeRegistry.has(storeName)) {
+            console.error(`[store] 状态源"${ storeName }"已经被注册`);
+        }
+
+        let state: S = initializer();
+        
+        storeRegistry.set(storeName, {
+            getState: () => state,
+            setState: (_state) => state = _state,
+            init: () => {
+                state = initializer();
+            }
+        });
+    
+        const registerAction = <P extends any[], R>(actionName: string, action: (state: S, ...args: P) => R): StoreAction<P, R> => {
+            const wholeName = storeName + '/' + actionName;
+            if (actionRegistry.has(actionName)) {
+                console.error(`[store] 操作"${ wholeName }"已经被注册`);
+            }
+            const wrappedAction = async (...args: P) => {
+                const record: ActionRecord = [ wholeName, clone(args) ];
+                historyData.push(record);
+                return action(state, ...args);
+            };
+            // @ts-ignore
+            actionRegistry.set(wholeName, wrappedAction);
+            return wrappedAction;
+        };
+    
+        return {
+            get state() {
+                return state;
+            },
+            registerAction,
+        }
     }
 }

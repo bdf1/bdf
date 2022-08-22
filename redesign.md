@@ -43,6 +43,29 @@ while (true) {
 ```ts
 import { reset, dump, load, history, defineStore, isReplaying } from "state";
 
+const mainStore = defineStore(() => {
+    return {
+        currentMap: map[0],
+        maps: [],
+    }
+}, {
+    serializer(data) {
+        return JSON.stringify(data);
+    },
+    deserializer(data) {
+        return JSON.parse(data);
+    },
+});
+
+mainStore.registerAction(() => {
+
+});
+const { registerAction, registerQuery } = store;
+
+watch(() => mainStore.state.map, () => {
+    console.log("xxx");
+});
+
 // 注册一个状态源
 const { state, registerAction, registerQuery } = defineStore((maps: Map[]) => {
     return {
@@ -58,9 +81,7 @@ state.maps.forEach((map) => {
     console.log(map);
 })
 
-// 初始化一个store
-init([]);
-// 将store的当前状态克隆后返回
+// 克隆当前的全部状态源
 const _state = dump();
 // 加载一个状态
 load(_state);
